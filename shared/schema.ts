@@ -91,6 +91,7 @@ export const orders = pgTable("orders", {
 export const payouts = pgTable("payouts", {
   id: uuid("id").primaryKey().defaultRandom(),
   vendor_id: uuid("vendor_id").notNull().references(() => users.id),
+  product_id: uuid("product_id").references(() => products.id), // Add product_id
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"), // pending, success, failed
   momo_number: text("momo_number").notNull(),
@@ -130,6 +131,7 @@ export const payments = pgTable("payments", {
   order_id: uuid("order_id").notNull().references(() => orders.id),
   vendor_id: uuid("vendor_id").notNull().references(() => users.id),
   buyer_id: uuid("buyer_id").notNull().references(() => users.id),
+  product_id: uuid("product_id").references(() => products.id), // Add product_id
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: text("currency").notNull().default("GHS"),
   payment_method: text("payment_method").notNull(), // card, mobile_money

@@ -784,6 +784,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Direct SQL database update endpoint
+  app.post('/api/database/alter-tables', async (req, res) => {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseUrl = process.env.SUPABASE_URL || `https://${process.env.DATABASE_URL.split('@')[1].split('/')[0]}`;
+      const supabaseKey = process.env.SUPABASE_ANON_KEY;
+      
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      console.log('Adding product_id columns to payments and payouts tables...');
+      
+      // Add product_id column to payments table
+      const { error: paymentsError } = await supabase.rpc('sql', {
+        query: `
+          ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS product_id uuid;
+          ALTER TABLE public.payouts ADD COLUMN IF NOT EXISTS product_id uuid;
+        `
+      });
+
+      if (paymentsError) {
+        console.error('Database alter error:', paymentsError);
+        return res.status(500).json({ 
+          status: false, 
+          message: 'Failed to alter database tables',
+          error: paymentsError.message 
+        });
+      }
+
+      // Update existing payment with product_id
+      const { error: updateError } = await supabase
+        .from('payments')
+        .update({ product_id: '1838f031-2cf6-42ae-a57a-a3bba6aeb04b' })
+        .eq('reference', 'VH_1752117543289_sfa6ows83');
+
+      if (updateError) {
+        console.error('Payment update error:', updateError);
+      }
+
+      res.json({ 
+        status: true, 
+        message: 'Database tables updated successfully with product_id columns',
+        data: { paymentsUpdated: true, payoutsUpdated: true, existingPaymentUpdated: !updateError }
+      });
+    } catch (error) {
+      console.error('Database alter error:', error);
+      res.status(500).json({ 
+        status: false, 
+        message: 'Failed to alter database tables',
+        error: error.message 
+      });
+    }
+  });
+
   // Test endpoint to create payment directly (bypassing order creation)
   app.post('/api/payments/test-create', authenticateToken, async (req, res) => {
     try {

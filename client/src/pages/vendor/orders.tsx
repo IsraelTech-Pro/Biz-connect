@@ -376,11 +376,12 @@ export default function VendorOrders() {
                     <h4 className="font-medium text-gray-900 mb-2">Order Information</h4>
                     <div className="space-y-1 text-sm">
                       <p><span className="font-medium">Order ID:</span> {selectedOrder.id}</p>
-                      <p><span className="font-medium">Status:</span> 
-                        <Badge className={`ml-2 ${getStatusColor(selectedOrder.status)}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Status:</span>
+                        <Badge className={getStatusColor(selectedOrder.status)}>
                           {selectedOrder.status}
                         </Badge>
-                      </p>
+                      </div>
                       <p><span className="font-medium">Date:</span> {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
                       <p><span className="font-medium">Amount:</span> ₵{selectedOrder.total_amount}</p>
                     </div>
