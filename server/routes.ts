@@ -555,9 +555,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orders = await storage.getOrdersByBuyer(req.user.id);
       }
       
-      res.json(orders);
+      // Add buyer information for vendor orders
+      if (req.user.role === 'vendor' || vendor) {
+        const ordersWithBuyers = await Promise.all(
+          orders.map(async (order) => {
+            if (order.buyer_id) {
+              const buyer = await storage.getUser(order.buyer_id);
+              return {
+                ...order,
+                buyer_name: buyer?.full_name || 'N/A',
+                buyer_email: buyer?.email || 'N/A',
+                buyer_phone: buyer?.phone || 'N/A'
+              };
+            }
+            return order;
+          })
+        );
+        res.json(ordersWithBuyers);
+      } else {
+        res.json(orders);
+      }
     } catch (error) {
-      res.status(500).json({ message: 'Failed to get orders' });
+      console.error('Error in orders API:', error);
+      res.status(500).json({ message: 'Failed to get orders', error: error.message });
     }
   });
 
@@ -1472,7 +1492,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { vendorId } = req.params;
       const orders = await storage.getOrdersByVendor(vendorId);
-      res.json(orders);
+      
+      // Fetch buyer information for each order
+      const ordersWithBuyers = await Promise.all(
+        orders.map(async (order) => {
+          if (order.buyer_id) {
+            const buyer = await storage.getUser(order.buyer_id);
+            return {
+              ...order,
+              buyer_name: buyer?.full_name || 'N/A',
+              buyer_email: buyer?.email || 'N/A',
+              buyer_phone: buyer?.phone || 'N/A'
+            };
+          }
+          return order;
+        })
+      );
+      
+      res.json(ordersWithBuyers);
     } catch (error) {
       console.error('Error fetching vendor orders:', error);
       res.status(500).json({ message: 'Failed to fetch vendor orders' });

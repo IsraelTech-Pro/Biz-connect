@@ -18,6 +18,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export class SupabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
+    console.log('Fetching user with ID:', id);
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -28,6 +29,12 @@ export class SupabaseStorage implements IStorage {
       console.error('Error fetching user:', error);
       return undefined;
     }
+    console.log('User fetched successfully:', {
+      id: data.id,
+      email: data.email,
+      full_name: data.full_name,
+      phone: data.phone
+    });
     return data;
   }
 
@@ -420,22 +427,7 @@ export class SupabaseStorage implements IStorage {
   async getOrdersByVendor(vendorId: string): Promise<Order[]> {
     const { data, error } = await supabase
       .from('orders')
-      .select(`
-        *,
-        products!orders_product_id_fkey (
-          id,
-          title,
-          price,
-          category,
-          image_url
-        ),
-        users!orders_buyer_id_fkey (
-          id,
-          name,
-          email,
-          phone_number
-        )
-      `)
+      .select('*')
       .eq('vendor_id', vendorId)
       .order('created_at', { ascending: false });
     
@@ -502,16 +494,7 @@ export class SupabaseStorage implements IStorage {
   async getPayoutsByVendor(vendorId: string): Promise<Payout[]> {
     const { data, error } = await supabase
       .from('payouts')
-      .select(`
-        *,
-        products!payouts_product_id_fkey (
-          id,
-          title,
-          price,
-          category,
-          image_url
-        )
-      `)
+      .select('*')
       .eq('vendor_id', vendorId)
       .order('created_at', { ascending: false });
     
@@ -746,28 +729,7 @@ export class SupabaseStorage implements IStorage {
   async getPaymentsByVendor(vendorId: string): Promise<Payment[]> {
     const { data, error } = await supabase
       .from('payments')
-      .select(`
-        *,
-        orders!payments_order_id_fkey (
-          shipping_address,
-          phone,
-          notes,
-          total_amount
-        ),
-        products!payments_product_id_fkey (
-          id,
-          title,
-          price,
-          category,
-          image_url
-        ),
-        users!payments_buyer_id_fkey (
-          id,
-          name,
-          email,
-          phone_number
-        )
-      `)
+      .select('*')
       .eq('vendor_id', vendorId)
       .order('created_at', { ascending: false });
     

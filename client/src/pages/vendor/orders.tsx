@@ -276,9 +276,9 @@ export default function VendorOrders() {
                             <User className="w-4 h-4 text-gray-400" />
                             <span className="text-sm font-medium">Customer</span>
                           </div>
-                          <p className="text-sm text-gray-600">{order.buyer_name || order.users?.name || 'N/A'}</p>
+                          <p className="text-sm text-gray-600">{order.buyer_name || order.users?.full_name || 'N/A'}</p>
                           <p className="text-sm text-gray-500">{order.buyer_email || order.users?.email || 'N/A'}</p>
-                          <p className="text-sm text-gray-500">{order.buyer_phone || order.users?.phone_number || order.phone || 'N/A'}</p>
+                          <p className="text-sm text-gray-500">{order.buyer_phone || order.users?.phone || order.phone || 'N/A'}</p>
                         </div>
                         
                         <div className="space-y-2">
@@ -390,9 +390,9 @@ export default function VendorOrders() {
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Customer Information</h4>
                     <div className="space-y-1 text-sm">
-                      <p><span className="font-medium">Name:</span> {selectedOrder.buyer_name || selectedOrder.users?.name || 'N/A'}</p>
+                      <p><span className="font-medium">Name:</span> {selectedOrder.buyer_name || selectedOrder.users?.full_name || 'N/A'}</p>
                       <p><span className="font-medium">Email:</span> {selectedOrder.buyer_email || selectedOrder.users?.email || 'N/A'}</p>
-                      <p><span className="font-medium">Phone:</span> {selectedOrder.phone || selectedOrder.users?.phone_number || 'N/A'}</p>
+                      <p><span className="font-medium">Phone:</span> {selectedOrder.buyer_phone || selectedOrder.users?.phone || selectedOrder.phone || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
