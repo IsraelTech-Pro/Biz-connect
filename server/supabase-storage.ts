@@ -420,7 +420,22 @@ export class SupabaseStorage implements IStorage {
   async getOrdersByVendor(vendorId: string): Promise<Order[]> {
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
+      .select(`
+        *,
+        products!orders_product_id_fkey (
+          id,
+          title,
+          price,
+          category,
+          image_url
+        ),
+        users!orders_buyer_id_fkey (
+          id,
+          name,
+          email,
+          phone_number
+        )
+      `)
       .eq('vendor_id', vendorId)
       .order('created_at', { ascending: false });
     
@@ -489,7 +504,7 @@ export class SupabaseStorage implements IStorage {
       .from('payouts')
       .select(`
         *,
-        products (
+        products!payouts_product_id_fkey (
           id,
           title,
           price,
@@ -733,18 +748,18 @@ export class SupabaseStorage implements IStorage {
       .from('payments')
       .select(`
         *,
-        orders (
+        orders!payments_order_id_fkey (
           shipping_address,
           phone,
           notes,
-          total_amount,
-          products (
-            id,
-            title,
-            price,
-            category,
-            image_url
-          )
+          total_amount
+        ),
+        products!payments_product_id_fkey (
+          id,
+          title,
+          price,
+          category,
+          image_url
         ),
         users!payments_buyer_id_fkey (
           id,
