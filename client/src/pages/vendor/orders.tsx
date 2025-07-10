@@ -17,7 +17,8 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,21 @@ export default function VendorOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
+  // Fetch product details for the selected order
+  const { data: productDetails } = useQuery({
+    queryKey: ['/api/products', selectedOrder?.product_id],
+    queryFn: async () => {
+      const response = await fetch(`/api/products/${selectedOrder?.product_id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch product details');
+      }
+      return response.json();
+    },
+    enabled: !!selectedOrder?.product_id && !!token
+  });
+
   const { data: orders = [], isLoading, error } = useQuery<Order[]>({
     queryKey: ['/api/orders', 'vendor', user?.id],
     queryFn: async () => {
@@ -49,7 +65,29 @@ export default function VendorOrders() {
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }
-      return response.json();
+      const ordersData = await response.json();
+      
+      // Fetch product details for each order
+      const ordersWithProducts = await Promise.all(
+        ordersData.map(async (order: Order) => {
+          if (order.product_id) {
+            try {
+              const productResponse = await fetch(`/api/products/${order.product_id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (productResponse.ok) {
+                const product = await productResponse.json();
+                return { ...order, product };
+              }
+            } catch (error) {
+              console.error('Failed to fetch product for order:', order.id, error);
+            }
+          }
+          return order;
+        })
+      );
+      
+      return ordersWithProducts;
     },
     enabled: !!user?.id && !!token
   });
@@ -88,7 +126,9 @@ export default function VendorOrders() {
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.buyer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.delivery_address?.toLowerCase().includes(searchTerm.toLowerCase());
+                         order.delivery_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.shipping_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.product?.title?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -295,6 +335,27 @@ export default function VendorOrders() {
                             <span className="text-sm font-medium">Order Total</span>
                           </div>
                           <p className="text-lg font-bold text-green-600">₵{order.amount || order.total_amount}</p>
+                          {order.product && (
+                            <div className="flex items-center space-x-2 mt-2">
+                              <div className="w-8 h-8 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                                {order.product.image_url ? (
+                                  <img 
+                                    src={order.product.image_url} 
+                                    alt={order.product.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="w-3 h-3 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 truncate">{order.product.title}</p>
+                                <p className="text-xs text-gray-500">Qty: {order.quantity}</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -406,10 +467,49 @@ export default function VendorOrders() {
                 
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Order Items</h4>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-600">
-                      Order items details will be displayed here based on the order items structure.
-                    </p>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    {productDetails ? (
+                      <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                          {productDetails.image_url ? (
+                            <img 
+                              src={productDetails.image_url} 
+                              alt={productDetails.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-medium text-gray-900">{productDetails.title}</h5>
+                          <p className="text-sm text-gray-600 mt-1">{productDetails.description?.substring(0, 100)}...</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center space-x-4">
+                              <span className="text-sm text-gray-500">Quantity: {selectedOrder.quantity}</span>
+                              <span className="text-sm font-medium text-gray-900">₵{productDetails.price}</span>
+                            </div>
+                            <Link to={`/products/${productDetails.id}`}>
+                              <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                                <Eye className="w-4 h-4" />
+                                <span>View Item</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-3">
+                        <Package className="w-8 h-8 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-600">Loading product details...</p>
+                          <p className="text-xs text-gray-500">Product ID: {selectedOrder?.product_id}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

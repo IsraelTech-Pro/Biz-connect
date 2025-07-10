@@ -18,7 +18,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export class SupabaseStorage implements IStorage {
   // Users
   async getUser(id: string): Promise<User | undefined> {
-    console.log('Fetching user with ID:', id);
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -29,12 +28,6 @@ export class SupabaseStorage implements IStorage {
       console.error('Error fetching user:', error);
       return undefined;
     }
-    console.log('User fetched successfully:', {
-      id: data.id,
-      email: data.email,
-      full_name: data.full_name,
-      phone: data.phone
-    });
     return data;
   }
 
