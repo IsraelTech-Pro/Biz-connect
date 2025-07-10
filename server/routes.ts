@@ -1,0 +1,1895 @@
+import type { Express, Request, Response, NextFunction } from "express";
+import express from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertSupportRequestSchema, insertVendorSupportRequestSchema, insertPaymentSchema } from "@shared/schema";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
+import "./types";
+
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_PUBLIC = process.env.PAYSTACK_PUBLIC_KEY;
+
+// Import Paystack functions
+import { createTransferRecipient, initiateTransfer } from './paystack-config';
+
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage_multer = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+// Use memory storage for Supabase uploads, disk storage for local fallback
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// Middleware to verify JWT token
+const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, async (err: any, decoded: any) => {
+    if (err) return res.status(403).json({ message: 'Invalid token' });
+    
+    try {
+      const user = await storage.getUser(decoded.id);
+      if (!user) {
+        return res.status(403).json({ message: 'User not found' });
+      }
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Authentication error:', error);
+      return res.status(500).json({ message: 'Authentication error' });
+    }
+  });
+};
+
+// Middleware to check if user is vendor
+const requireVendor = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'vendor') {
+    return res.status(403).json({ message: 'Vendor access required' });
+  }
+  next();
+};
+
+// Middleware to check if user is admin
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+  
+  // Serve uploaded files statically
+  app.use('/uploads', express.static(uploadDir));
+
+  // Image upload endpoint
+  app.post('/api/upload', authenticateToken, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      
+      // Check if Supabase is configured
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        // Fall back to local storage - save file to disk
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = 'image-' + uniqueSuffix + path.extname(req.file.originalname);
+        const filePath = path.join(uploadDir, filename);
+        
+        fs.writeFileSync(filePath, req.file.buffer);
+        const fileUrl = `/uploads/${filename}`;
+        res.json({ url: fileUrl });
+        return;
+      }
+      
+      // Upload to Supabase Storage
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, req.file.buffer, {
+          contentType: req.file.mimetype,
+          upsert: true // Allow overwriting files
+        });
+      
+      if (error) {
+        console.error('Supabase upload error:', error);
+        // Fall back to local storage - save file to disk
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = 'image-' + uniqueSuffix + path.extname(req.file.originalname);
+        const filePath = path.join(uploadDir, filename);
+        
+        fs.writeFileSync(filePath, req.file.buffer);
+        const fileUrl = `/uploads/${filename}`;
+        res.json({ url: fileUrl });
+        return;
+      }
+      
+      // Get public URL
+      const { data: publicData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+      
+      res.json({ url: publicData.publicUrl });
+    } catch (error) {
+      console.error('Upload error:', error);
+      res.status(500).json({ message: 'Failed to upload image' });
+    }
+  });
+
+  // Auth routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        return res.status(400).json({ message: 'Invalid email format. Please use a valid email address (e.g., user@example.com)' });
+      }
+      
+      const existingUser = await storage.getUserByEmail(userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ message: 'User already exists' });
+      }
+
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
+
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET);
+      res.json({ user: { ...user, password: undefined }, token });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(400).json({ message: 'Invalid user data', error: error.message });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Invalid email format. Please use a valid email address (e.g., user@example.com)' });
+      }
+      
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user || !await bcrypt.compare(password, user.password)) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET);
+      res.json({ user: { ...user, password: undefined }, token });
+    } catch (error) {
+      res.status(500).json({ message: 'Login failed' });
+    }
+  });
+
+  app.get('/api/auth/me', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get user' });
+    }
+  });
+
+  // User update route
+  app.put('/api/users/:id', authenticateToken, async (req, res) => {
+    try {
+      console.log('User update request received:', req.body);
+      console.log('User ID:', req.params.id);
+      console.log('Auth user:', req.user);
+      
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Check if user is updating their own profile or is admin
+      if (req.user.id !== req.params.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized to update this user' });
+      }
+      
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Process the update data
+      const updateData = {
+        ...req.body,
+        updated_at: new Date().toISOString(),
+        // Remove password field if it exists
+        password: undefined,
+        // Ensure JSONB fields are properly formatted
+        profile_picture: req.body.profile_picture || null,
+        banner_url: req.body.banner_url || null,
+      };
+      
+      console.log('Processed update data:', updateData);
+      
+      const updatedUser = await storage.updateUser(req.params.id, updateData);
+      console.log('User updated successfully:', updatedUser);
+      
+      res.json({ ...updatedUser, password: undefined });
+    } catch (error) {
+      console.error('User update error:', error);
+      res.status(500).json({ message: 'Failed to update user', error: error.message });
+    }
+  });
+
+  // Product routes
+  app.get('/api/products', async (req, res) => {
+    try {
+      const { category, vendor } = req.query;
+      let products;
+      
+      console.log('Products request query:', req.query);
+      
+      if (category) {
+        products = await storage.getProductsByCategory(category as string);
+      } else if (vendor) {
+        console.log('Filtering products by vendor:', vendor);
+        products = await storage.getProductsByVendor(vendor as string);
+        console.log('Vendor products found:', products.length);
+      } else {
+        products = await storage.getProducts();
+      }
+      
+      // Ensure we always return an array
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      res.status(500).json({ message: 'Failed to get products' });
+    }
+  });
+
+  // Enhanced filter endpoints
+  app.get('/api/products/filter/flash-sale', async (req, res) => {
+    try {
+      const products = await storage.getFlashSaleProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching flash sale products:', error);
+      res.status(500).json({ message: 'Failed to get flash sale products' });
+    }
+  });
+
+  app.get('/api/products/filter/clearance', async (req, res) => {
+    try {
+      const products = await storage.getClearanceProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching clearance products:', error);
+      res.status(500).json({ message: 'Failed to get clearance products' });
+    }
+  });
+
+  app.get('/api/products/filter/trending', async (req, res) => {
+    try {
+      const products = await storage.getTrendingProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching trending products:', error);
+      res.status(500).json({ message: 'Failed to get trending products' });
+    }
+  });
+
+  app.get('/api/products/filter/new-this-week', async (req, res) => {
+    try {
+      const products = await storage.getNewThisWeekProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching new this week products:', error);
+      res.status(500).json({ message: 'Failed to get new this week products' });
+    }
+  });
+
+  app.get('/api/products/filter/top-selling', async (req, res) => {
+    try {
+      const products = await storage.getTopSellingProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching top selling products:', error);
+      res.status(500).json({ message: 'Failed to get top selling products' });
+    }
+  });
+
+  app.get('/api/products/filter/featured', async (req, res) => {
+    try {
+      const products = await storage.getFeaturedProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      res.status(500).json({ message: 'Failed to get featured products' });
+    }
+  });
+
+  app.get('/api/products/filter/hot-deals', async (req, res) => {
+    try {
+      const products = await storage.getHotDealsProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching hot deals products:', error);
+      res.status(500).json({ message: 'Failed to get hot deals products' });
+    }
+  });
+
+  app.get('/api/products/filter/dont-miss', async (req, res) => {
+    try {
+      const products = await storage.getDontMissProducts();
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error fetching dont miss products:', error);
+      res.status(500).json({ message: 'Failed to get dont miss products' });
+    }
+  });
+
+  // Advanced filter endpoint
+  app.post('/api/products/filter', async (req, res) => {
+    try {
+      const filters = req.body;
+      const products = await storage.getProductsByFilter(filters);
+      res.json(Array.isArray(products) ? products : []);
+    } catch (error) {
+      console.error('Error filtering products:', error);
+      res.status(500).json({ message: 'Failed to filter products' });
+    }
+  });
+
+  app.get('/api/products/:id', async (req, res) => {
+    try {
+      const product = await storage.getProduct(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+      res.json(product);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get product' });
+    }
+  });
+
+  app.post('/api/products', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      console.log('Received product data:', req.body);
+      console.log('Product images received:', req.body.product_images);
+      
+      // Process the data before validation
+      const processedData = {
+        ...req.body,
+        vendor_id: req.user.id,
+        // Convert date string to Date object if present
+        flash_sale_end_date: null, // Vendors cannot set flash sale dates
+        // Ensure numbers are properly parsed
+        stock_quantity: parseInt(req.body.stock_quantity) || 0,
+        discount_percentage: parseInt(req.body.discount_percentage) || 0,
+        low_stock_threshold: parseInt(req.body.low_stock_threshold) || 10,
+        // Convert decimal fields to strings if they exist
+        original_price: req.body.original_price ? req.body.original_price.toString() : null,
+        weight: req.body.weight ? req.body.weight.toString() : null,
+        // Promotional flags are admin-only, set to false for vendors
+        is_flash_sale: false,
+        is_clearance: false,
+        is_trending: false,
+        is_new_this_week: false,
+        is_top_selling: false,
+        is_featured: false,
+        is_hot_deal: false,
+        is_dont_miss: false,
+        is_featured_vendor: false,
+        // Handle nullable fields properly
+        brand: req.body.brand || null,
+        sku: req.body.sku || null,
+        dimensions: req.body.dimensions || null,
+        // SEO fields are admin-only, set to null for vendors
+        meta_title: null,
+        meta_description: null,
+        search_keywords: [], // Empty array for vendors
+        // Ensure arrays are properly handled
+        tags: Array.isArray(req.body.tags) ? req.body.tags : (req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : []),
+        product_images: Array.isArray(req.body.product_images) ? req.body.product_images : [],
+        // Remove any old images field that might be present
+        images: undefined
+      };
+      
+      console.log('Processed product data:', processedData);
+      
+      const productData = insertProductSchema.parse(processedData);
+      
+      console.log('Parsed product data:', productData);
+      
+      const product = await storage.createProduct(productData);
+      res.json(product);
+    } catch (error) {
+      console.error('Product creation error:', error);
+      res.status(400).json({ message: 'Invalid product data', error: error.message });
+    }
+  });
+
+  app.put('/api/products/:id', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const product = await storage.getProduct(req.params.id);
+      if (!product || product.vendor_id !== req.user.id) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+      
+      console.log('Updating product with data:', req.body);
+      console.log('Product images for update:', req.body.product_images);
+      
+      // Validate and process the request body - vendors cannot modify promotional/SEO fields
+      const productData = {
+        ...req.body,
+        price: req.body.price.toString(), // Ensure price is string
+        stock_quantity: parseInt(req.body.stock_quantity) || 0, // Ensure stock_quantity is number
+        weight: req.body.weight?.toString() || null, // Ensure weight is string or null
+        // Ensure numbers are properly parsed
+        discount_percentage: parseInt(req.body.discount_percentage) || 0,
+        low_stock_threshold: parseInt(req.body.low_stock_threshold) || 10,
+        // Convert decimal fields to strings if they exist
+        original_price: req.body.original_price ? req.body.original_price.toString() : null,
+        // Handle nullable fields properly
+        brand: req.body.brand || null,
+        sku: req.body.sku || null,
+        dimensions: req.body.dimensions || null,
+        // Ensure arrays are properly handled
+        tags: Array.isArray(req.body.tags) ? req.body.tags : (req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : []),
+        product_images: Array.isArray(req.body.product_images) ? req.body.product_images : [],
+        updated_at: new Date().toISOString(),
+        // Remove promotional, SEO, and flash sale fields - vendors cannot modify these
+        flash_sale_end_date: undefined,
+        is_flash_sale: undefined,
+        is_clearance: undefined,
+        is_trending: undefined,
+        is_new_this_week: undefined,
+        is_top_selling: undefined,
+        is_featured: undefined,
+        is_hot_deal: undefined,
+        is_dont_miss: undefined,
+        is_featured_vendor: undefined,
+        meta_title: undefined,
+        meta_description: undefined,
+        search_keywords: undefined,
+        // Remove any old images field that might be present
+        images: undefined
+      };
+      
+      const updatedProduct = await storage.updateProduct(req.params.id, productData);
+      res.json(updatedProduct);
+    } catch (error) {
+      console.error('Product update error:', error);
+      res.status(400).json({ message: 'Failed to update product', error: error.message });
+    }
+  });
+
+  app.delete('/api/products/:id', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      const product = await storage.getProduct(req.params.id);
+      if (!product || product.vendor_id !== req.user.id) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+      
+      await storage.deleteProduct(req.params.id);
+      res.json({ message: 'Product deleted' });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete product' });
+    }
+  });
+
+  // Order routes
+  app.get('/api/orders', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      const { vendor } = req.query;
+      let orders;
+      
+      if (vendor && req.user.role === 'vendor' && req.user.id === vendor) {
+        // Vendor requesting their own orders
+        orders = await storage.getOrdersByVendor(vendor as string);
+      } else if (req.user.role === 'admin') {
+        orders = await storage.getOrders();
+      } else if (req.user.role === 'vendor') {
+        orders = await storage.getOrdersByVendor(req.user.id);
+      } else {
+        orders = await storage.getOrdersByBuyer(req.user.id);
+      }
+      
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get orders' });
+    }
+  });
+
+  app.post('/api/orders', async (req, res) => {
+    try {
+      const orderData = insertOrderSchema.parse(req.body);
+      const order = await storage.createOrder(orderData);
+      
+      // Verify payment with Paystack if payment_id is provided
+      if (orderData.payment_id && PAYSTACK_SECRET) {
+        try {
+          const response = await fetch(`https://api.paystack.co/transaction/verify/${orderData.payment_id}`, {
+            headers: {
+              'Authorization': `Bearer ${PAYSTACK_SECRET}`
+            }
+          });
+          
+          const paymentData = await response.json();
+          
+          if (paymentData.status && paymentData.data.status === 'success') {
+            // Payment verified, update order status
+            await storage.updateOrder(order.id, { status: 'confirmed' });
+            
+            // Note: Vendor payouts should be processed manually by admin
+            // All payments go to platform first, then admin processes vendor payouts
+            console.log(`Payment verified for order ${order.id}. Amount: ${paymentData.data.amount / 100} GHS`);
+            console.log(`Vendor payout will be processed manually by admin`);
+          }
+        } catch (paymentError) {
+          console.error('Payment verification error:', paymentError);
+        }
+      }
+      
+      res.json(order);
+    } catch (error) {
+      console.error('Order creation error:', error);
+      res.status(400).json({ message: 'Invalid order data', error: error.message });
+    }
+  });
+
+  // Function to process vendor payout
+  async function processVendorPayout(order: any) {
+    const vendor = await storage.getUser(order.vendor_id);
+    if (!vendor || !vendor.momo_number) {
+      throw new Error('Vendor mobile money number not found');
+    }
+
+    // Create transfer recipient for vendor
+    const recipientData = {
+      type: 'mobile_money',
+      name: vendor.business_name || vendor.full_name,
+      account_number: vendor.momo_number,
+      bank_code: 'MTN' // Default to MTN, could be made dynamic
+    };
+
+    const recipientResponse = await createTransferRecipient(recipientData);
+    
+    if (!recipientResponse.status) {
+      throw new Error('Failed to create transfer recipient');
+    }
+
+    // Calculate vendor payout (total amount minus platform fee)
+    const platformFee = order.amount * 0.05; // 5% platform fee
+    const vendorPayout = order.amount - platformFee;
+
+    // Initiate transfer to vendor
+    const transferData = {
+      source: 'balance',
+      amount: vendorPayout,
+      recipient: recipientResponse.data.recipient_code,
+      reason: `Payout for order ${order.id}`,
+      reference: `PAYOUT-${order.id}-${Date.now()}`
+    };
+
+    const transferResponse = await initiateTransfer(transferData);
+    
+    if (!transferResponse.status) {
+      throw new Error('Failed to initiate transfer to vendor');
+    }
+
+    console.log(`Vendor payout initiated: ${vendorPayout} GHS to ${vendor.momo_number}`);
+  }
+
+  app.put('/api/orders/:id', authenticateToken, async (req, res) => {
+    try {
+      const order = await storage.getOrder(req.params.id);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      
+      // Only vendor can update their orders or admin can update any order
+      if (!req.user || (req.user.role !== 'admin' && order.vendor_id !== req.user.id)) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      const updatedOrder = await storage.updateOrder(req.params.id, req.body);
+      res.json(updatedOrder);
+    } catch (error) {
+      res.status(400).json({ message: 'Failed to update order' });
+    }
+  });
+
+  // Vendor routes
+  app.get('/api/vendors', async (req, res) => {
+    try {
+      const vendors = await storage.getVendors();
+      res.json(vendors.map(v => ({ ...v, password: undefined })));
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get vendors' });
+    }
+  });
+
+  // Vendor payments endpoint
+  app.get('/api/vendors/:id/payments', authenticateToken, async (req, res) => {
+    try {
+      // Only vendor can see their own payments or admin can see any vendor payments
+      if (!req.user || (req.user.role !== 'admin' && req.user.id !== req.params.id)) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      const payments = await storage.getPaymentsByVendor(req.params.id);
+      res.json(payments);
+    } catch (error) {
+      console.error('Error fetching vendor payments:', error);
+      res.status(500).json({ message: 'Failed to get vendor payments' });
+    }
+  });
+
+  // Vendor payouts endpoint
+  app.get('/api/vendors/:id/payouts', authenticateToken, async (req, res) => {
+    try {
+      // Only vendor can see their own payouts or admin can see any vendor payouts
+      if (!req.user || (req.user.role !== 'admin' && req.user.id !== req.params.id)) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      const payouts = await storage.getPayoutsByVendor(req.params.id);
+      res.json(payouts);
+    } catch (error) {
+      console.error('Error fetching vendor payouts:', error);
+      res.status(500).json({ message: 'Failed to get vendor payouts' });
+    }
+  });
+
+  app.get('/api/vendors/pending', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const vendors = await storage.getPendingVendors();
+      res.json(vendors.map(v => ({ ...v, password: undefined })));
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get pending vendors' });
+    }
+  });
+
+  app.post('/api/vendors/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const vendor = await storage.approveVendor(req.params.id);
+      res.json({ ...vendor, password: undefined });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to approve vendor' });
+    }
+  });
+
+  app.get('/api/vendors/:id/stats', authenticateToken, async (req, res) => {
+    try {
+      // Only vendor can see their own stats or admin can see any vendor stats
+      if (!req.user || (req.user.role !== 'admin' && req.user.id !== req.params.id)) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      const stats = await storage.getVendorStats(req.params.id);
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get vendor stats' });
+    }
+  });
+
+  // User routes
+  app.get('/api/users/:id', async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      // Don't return password
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get user' });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getPlatformStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get platform stats' });
+    }
+  });
+
+  app.get('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getPlatformSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get platform settings' });
+    }
+  });
+
+  app.put('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.updatePlatformSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      res.status(400).json({ message: 'Failed to update platform settings' });
+    }
+  });
+
+  // Paystack public key endpoint
+  app.get('/api/paystack/public-key', (req, res) => {
+    res.json({ 
+      publicKey: PAYSTACK_PUBLIC,
+      configured: !!PAYSTACK_PUBLIC && !!PAYSTACK_SECRET
+    });
+  });
+
+  // Test endpoint to create payment directly (bypassing order creation)
+  app.post('/api/payments/test-create', authenticateToken, async (req, res) => {
+    try {
+      const { reference, amount, currency, payment_method, vendor_id, buyer_id, status } = req.body;
+      
+      if (!reference || !amount || !vendor_id || !buyer_id) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Missing required fields: reference, amount, vendor_id, buyer_id' 
+        });
+      }
+
+      // Create test order for payment testing
+      const orderData = {
+        buyer_id,
+        vendor_id,
+        product_id: '1838f031-2cf6-42ae-a57a-a3bba6aeb04b',
+        quantity: 1,
+        total_amount: amount.toString(),
+        status: 'pending',
+        shipping_address: 'Test Address',
+        phone: '233551035300',
+        notes: 'Test payment order'
+      };
+      
+      const order = await storage.createOrder(orderData);
+      
+      // Create payment record
+      const paymentData = {
+        reference,
+        order_id: order.id,
+        vendor_id,
+        buyer_id,
+        amount: amount.toString(),
+        currency: currency || 'GHS',
+        payment_method: payment_method || 'card',
+        status: status || 'pending'
+      };
+
+      const payment = await storage.createPayment(paymentData);
+      res.json({ 
+        status: true, 
+        message: 'Payment created successfully', 
+        data: payment 
+      });
+    } catch (error) {
+      console.error('Test payment creation error:', error);
+      res.status(500).json({ 
+        status: false, 
+        message: 'Failed to create test payment',
+        error: error.message 
+      });
+    }
+  });
+
+  // Payment routes - Direct vendor payments with callback handling
+  app.post('/api/payments/initialize', async (req, res) => {
+    try {
+      const { 
+        email, 
+        amount, 
+        mobile_number, 
+        provider, 
+        payment_method,
+        order_id,
+        vendor_id,
+        buyer_id
+      } = req.body;
+      
+      console.log('Initializing payment:', { 
+        email, 
+        amount, 
+        mobile_number, 
+        provider, 
+        payment_method,
+        order_id,
+        vendor_id,
+        buyer_id
+      });
+      
+      if (!email || !amount || !order_id || !vendor_id || !buyer_id) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Missing required fields: email, amount, order_id, vendor_id, buyer_id' 
+        });
+      }
+
+      // Generate unique payment reference
+      const reference = `VH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Get vendor information for subaccount
+      const vendor = await storage.getUser(vendor_id);
+      if (!vendor) {
+        return res.status(404).json({ 
+          status: false, 
+          message: 'Vendor not found' 
+        });
+      }
+
+      // Create payment record in database
+      const paymentData = {
+        reference,
+        order_id,
+        vendor_id,
+        buyer_id,
+        amount: amount.toString(),
+        currency: 'GHS',
+        payment_method,
+        mobile_number: mobile_number || null,
+        network_provider: provider || null,
+        status: 'pending'
+      };
+      
+      const payment = await storage.createPayment(paymentData);
+      
+      // Prepare Paystack payment data
+      const paystackData: any = {
+        email,
+        amount: Math.round(amount * 100), // Convert to kobo
+        reference,
+        callback_url: `${req.protocol}://${req.get('host')}/api/payments/callback`,
+      };
+
+      // Add mobile money specific fields
+      if (payment_method === 'mobile_money' && mobile_number && provider) {
+        paystackData.mobile_number = mobile_number;
+        paystackData.provider = provider;
+        paystackData.channels = ['mobile_money'];
+      }
+      
+      // Add subaccount for direct vendor payment
+      if (vendor.paystack_subaccount) {
+        paystackData.subaccount = vendor.paystack_subaccount;
+      }
+
+      const response = await fetch('https://api.paystack.co/transaction/initialize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paystackData),
+      });
+
+      const data = await response.json();
+      console.log('Paystack payment response:', data);
+      
+      if (!response.ok) {
+        return res.status(400).json({ 
+          status: false, 
+          message: data.message || 'Payment initialization failed' 
+        });
+      }
+
+      // Update payment with Paystack response
+      await storage.updatePayment(payment.id, {
+        paystack_reference: data.data.reference,
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code
+      });
+
+      res.json({
+        status: true,
+        message: 'Payment initialized successfully',
+        data: {
+          authorization_url: data.data.authorization_url,
+          access_code: data.data.access_code,
+          reference: data.data.reference,
+          payment_id: payment.id
+        }
+      });
+    } catch (error) {
+      console.error('Payment initialization error:', error);
+      res.status(500).json({ 
+        status: false, 
+        message: 'Internal server error' 
+      });
+    }
+  });
+
+  // Mobile money payment initialization
+  app.post('/api/payments/initialize-mobile-money', authenticateToken, async (req, res) => {
+    try {
+      const { email, amount, mobile_number, provider } = req.body;
+      
+      if (!PAYSTACK_SECRET) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Paystack secret key is not configured' 
+        });
+      }
+      
+      console.log('Initializing mobile money payment:', {
+        email,
+        amount,
+        mobile_number,
+        provider
+      });
+      
+      // Generate unique payment reference
+      const reference = `VH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Get current user from request
+      const user = req.user as any;
+      console.log('User from token:', user);
+      if (!user) {
+        console.log('No user found in request');
+        return res.status(401).json({ 
+          status: false, 
+          message: 'User not authenticated' 
+        });
+      }
+      
+      // Get vendor information for the product (in real implementation, this would be passed from frontend)
+      const product = await storage.getProduct('1838f031-2cf6-42ae-a57a-a3bba6aeb04b');
+      if (!product) {
+        return res.status(404).json({
+          status: false,
+          message: 'Product not found'
+        });
+      }
+      
+      // Get vendor details including paystack_subaccount
+      console.log('Fetching vendor with ID:', product.vendor_id);
+      const vendor = await storage.getUser(product.vendor_id);
+      if (!vendor) {
+        console.log('Vendor not found for ID:', product.vendor_id);
+        return res.status(404).json({
+          status: false,
+          message: 'Vendor not found'
+        });
+      }
+      
+      console.log('Vendor found:', {
+        id: vendor.id,
+        name: vendor.full_name,
+        business_name: vendor.business_name,
+        paystack_subaccount: vendor.paystack_subaccount
+      });
+      
+      // Create order for mobile money payment
+      const orderData = {
+        buyer_id: user.id,
+        vendor_id: product.vendor_id, // Use actual vendor ID from product
+        product_id: product.id,
+        quantity: 1,
+        total_amount: amount.toString(),
+        status: 'pending',
+        shipping_address: 'Mobile Money Test Address',
+        phone: user.phone || mobile_number,
+        notes: 'Mobile money payment order'
+      };
+      
+      const order = await storage.createOrder(orderData);
+      
+      // Create payment record in database
+      const paymentData = {
+        reference,
+        order_id: order.id,
+        vendor_id: product.vendor_id, // Use actual vendor ID
+        buyer_id: user.id,
+        amount: amount.toString(),
+        currency: 'GHS',
+        payment_method: 'mobile_money',
+        mobile_number,
+        network_provider: provider,
+        status: 'pending'
+      };
+      
+      const payment = await storage.createPayment(paymentData);
+      console.log('Payment record created:', payment);
+      
+      // Prepare payment initialization with vendor subaccount if available
+      const paymentPayload: any = {
+        email,
+        amount: amount * 100, // Convert to kobo
+        reference,
+        channels: ['mobile_money'],
+        mobile_money: {
+          phone: mobile_number,
+          provider: provider
+        },
+        callback_url: `${req.protocol}://${req.get('host')}/api/payments/callback`,
+        metadata: {
+          cancel_action: `${req.protocol}://${req.get('host')}/api/payments/callback`,
+          vendor_id: product.vendor_id,
+          order_id: order.id
+        }
+      };
+      
+      // Include subaccount for direct vendor payment if available
+      if (vendor.paystack_subaccount) {
+        paymentPayload.subaccount = vendor.paystack_subaccount;
+        console.log('Using vendor subaccount for direct payment:', vendor.paystack_subaccount);
+      }
+      
+      const response = await fetch('https://api.paystack.co/transaction/initialize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(paymentPayload)
+      });
+      
+      const data = await response.json();
+      console.log('Paystack mobile money response:', data);
+      
+      if (!response.ok) {
+        return res.status(400).json({ 
+          status: false, 
+          message: data.message || 'Payment initialization failed' 
+        });
+      }
+      
+      // Update payment with Paystack response
+      await storage.updatePayment(payment.id, {
+        paystack_reference: data.data.reference,
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code
+      });
+      
+      res.json({
+        status: true,
+        message: 'Authorization URL created',
+        data: {
+          authorization_url: data.data.authorization_url,
+          access_code: data.data.access_code,
+          reference: data.data.reference,
+          payment_id: payment.id,
+          order_id: order.id
+        }
+      });
+    } catch (error) {
+      console.error('Mobile money initialization error:', error);
+      res.status(500).json({ 
+        status: false, 
+        message: 'Failed to initialize mobile money payment',
+        error: error.message
+      });
+    }
+  });
+
+  // Payment callback route - handles both success and failure
+  app.get('/api/payments/callback', async (req, res) => {
+    const { reference, trxref } = req.query;
+    const paymentReference = reference || trxref;
+    
+    console.log('Payment callback received:', { reference, trxref, paymentReference });
+    
+    if (paymentReference) {
+      try {
+        // Find payment in database
+        const payment = await storage.getPaymentByReference(paymentReference as string);
+        
+        if (!payment) {
+          console.log('Payment not found in database:', paymentReference);
+          return res.redirect(`/payment-result?status=failed&reason=payment_not_found`);
+        }
+
+        // Verify payment with Paystack
+        const response = await fetch(`https://api.paystack.co/transaction/verify/${paymentReference}`, {
+          headers: {
+            'Authorization': `Bearer ${PAYSTACK_SECRET}`
+          }
+        });
+        
+        const paymentData = await response.json();
+        console.log('Payment verification response:', paymentData);
+        
+        if (paymentData.status && paymentData.data.status === 'success') {
+          // Payment verified successfully - update payment status
+          await storage.updatePayment(payment.id, {
+            status: 'success',
+            gateway_response: paymentData.data.gateway_response,
+            paid_at: new Date()
+          });
+          
+          // Update order status (skip if fails due to schema issues)
+          try {
+            await storage.updateOrder(payment.order_id, { 
+              status: 'confirmed'
+            });
+            console.log('Order status updated successfully');
+          } catch (orderError) {
+            console.error('Failed to update order status (continuing with payment success):', orderError);
+            // Continue with payment success even if order update fails
+          }
+          
+          console.log(`Payment successful: ${paymentReference} - Amount: ${paymentData.data.amount / 100} GHS`);
+          
+          // Redirect to success page with order details
+          res.redirect(`/payment-result?status=success&reference=${paymentReference}&amount=${paymentData.data.amount / 100}&order_id=${payment.order_id}`);
+        } else {
+          // Payment failed verification
+          const errorMessage = paymentData.data?.gateway_response || paymentData.message || 'Payment failed';
+          await storage.updatePayment(payment.id, {
+            status: 'failed',
+            gateway_response: errorMessage
+          });
+          
+          console.log(`Payment failed: ${paymentReference} - Reason: ${errorMessage}`);
+          
+          res.redirect(`/payment-result?status=failed&reason=payment_failed&reference=${paymentReference}`);
+        }
+      } catch (error) {
+        console.error('Payment verification error:', error);
+        
+        // Update payment as failed if found
+        try {
+          const payment = await storage.getPaymentByReference(paymentReference as string);
+          if (payment) {
+            await storage.updatePayment(payment.id, {
+              status: 'failed',
+              gateway_response: 'Verification error'
+            });
+          }
+        } catch (updateError) {
+          console.error('Failed to update payment status:', updateError);
+        }
+        
+        res.redirect(`/payment-result?status=failed&reason=verification_error&reference=${paymentReference}`);
+      }
+    } else {
+      res.redirect('/payment-result?status=failed&reason=no_reference');
+    }
+  });
+
+  app.post('/api/payments/verify', async (req, res) => {
+    try {
+      const { reference } = req.body;
+      
+      const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`
+        }
+      });
+      
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to verify payment' });
+    }
+  });
+
+  // Test endpoint to create a payment record for testing callback
+  app.post('/api/payments/create-test', async (req, res) => {
+    try {
+      const { reference, amount, order_id } = req.body;
+      
+      const testPayment = {
+        reference: reference || `TEST_REF_${Date.now()}`,
+        amount: amount || '10.00',
+        payment_method: 'mobile_money',
+        vendor_id: '6fac5f0f-9522-49c2-a131-60bf330545d5',
+        buyer_id: '6fac5f0f-9522-49c2-a131-60bf330545d5',
+        order_id: order_id || '6fac5f0f-9522-49c2-a131-60bf330545d5'
+      };
+      
+      const payment = await storage.createPayment(testPayment);
+      res.json({ status: true, payment });
+    } catch (error) {
+      console.error('Error creating test payment:', error);
+      res.status(500).json({ status: false, message: 'Failed to create test payment' });
+    }
+  });
+
+  // Vendor stats route
+  app.get('/api/vendor/stats/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      // Only allow vendors to view their own stats or admins to view any stats
+      if (req.user.role !== 'admin' && req.user.id !== req.params.id) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+      
+      const stats = await storage.getVendorStats(req.params.id);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching vendor stats:', error);
+      res.status(500).json({ message: 'Failed to get vendor stats' });
+    }
+  });
+
+  // Payout routes
+  app.get('/api/payouts', authenticateToken, async (req, res) => {
+    try {
+      let payouts;
+      
+      if (!req.user) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+      
+      if (req.user.role === 'admin') {
+        payouts = await storage.getPayouts();
+      } else if (req.user.role === 'vendor') {
+        payouts = await storage.getPayoutsByVendor(req.user.id);
+      } else {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      
+      res.json(payouts);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get payouts' });
+    }
+  });
+
+  app.post('/api/payouts/transfer', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { vendor_id, amount, momo_number } = req.body;
+      
+      // Create transfer recipient
+      const recipientResponse = await fetch('https://api.paystack.co/transferrecipient', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'mobile_money',
+          name: 'Vendor',
+          account_number: momo_number,
+          bank_code: 'MTN',
+          currency: 'GHS'
+        })
+      });
+      
+      const recipientData = await recipientResponse.json();
+      
+      if (!recipientData.status) {
+        return res.status(400).json({ message: 'Failed to create transfer recipient' });
+      }
+      
+      // Initiate transfer
+      const transferResponse = await fetch('https://api.paystack.co/transfer', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PAYSTACK_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          source: 'balance',
+          amount: amount * 100, // Convert to pesewas
+          recipient: recipientData.data.recipient_code,
+          reason: 'Vendor payout'
+        })
+      });
+      
+      const transferData = await transferResponse.json();
+      res.json(transferData);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to initiate payout' });
+    }
+  });
+
+  // Support request routes
+  app.post('/api/support-requests', async (req, res) => {
+    try {
+      const supportRequest = insertSupportRequestSchema.parse(req.body);
+      const newSupportRequest = await storage.createSupportRequest(supportRequest);
+      res.json(newSupportRequest);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/vendor-support-requests', async (req, res) => {
+    try {
+      const vendorSupportRequest = insertVendorSupportRequestSchema.parse(req.body);
+      const newVendorSupportRequest = await storage.createVendorSupportRequest(vendorSupportRequest);
+      res.json(newVendorSupportRequest);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Setup route to populate database with sample data
+  app.post('/api/setup-data', async (req, res) => {
+    try {
+      const { setupSupabaseData } = await import('./setup-supabase');
+      await setupSupabaseData();
+      res.json({ message: 'Database populated with sample data successfully' });
+    } catch (error) {
+      console.error('Error setting up data:', error);
+      res.status(500).json({ message: 'Failed to setup data' });
+    }
+  });
+
+  // Add comprehensive products endpoint
+  app.post('/api/add-comprehensive-products', async (req, res) => {
+    try {
+      const { addComprehensiveProducts } = await import('./add-comprehensive-products');
+      const result = await addComprehensiveProducts();
+      res.json({ 
+        message: `Added ${result.success} products successfully, ${result.failed} failed`,
+        result 
+      });
+    } catch (error) {
+      console.error('Error adding comprehensive products:', error);
+      res.status(500).json({ message: 'Failed to add comprehensive products' });
+    }
+  });
+
+  // Vendor stats endpoint
+  app.get('/api/vendor/stats/:vendorId', authenticateToken, async (req, res) => {
+    try {
+      const { vendorId } = req.params;
+      const stats = await storage.getVendorStats(vendorId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching vendor stats:', error);
+      res.status(500).json({ message: 'Failed to fetch vendor stats' });
+    }
+  });
+
+  // Vendor orders endpoint
+  app.get('/api/orders/vendor/:vendorId', authenticateToken, async (req, res) => {
+    try {
+      const { vendorId } = req.params;
+      const orders = await storage.getOrdersByVendor(vendorId);
+      res.json(orders);
+    } catch (error) {
+      console.error('Error fetching vendor orders:', error);
+      res.status(500).json({ message: 'Failed to fetch vendor orders' });
+    }
+  });
+
+  // Dashboard API routes
+  
+  // Sync Paystack data
+  app.post('/api/sync/transactions', requireAdmin, async (req, res) => {
+    try {
+      const { databaseSync } = await import('./database-sync');
+      await databaseSync.syncTransactions();
+      res.json({ success: true, message: 'Transactions synced successfully' });
+    } catch (error) {
+      console.error('Transaction sync error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to sync transactions',
+        error: error.message 
+      });
+    }
+  });
+
+  app.post('/api/sync/payouts', requireAdmin, async (req, res) => {
+    try {
+      const { databaseSync } = await import('./database-sync');
+      await databaseSync.syncPayouts();
+      res.json({ success: true, message: 'Payouts synced successfully' });
+    } catch (error) {
+      console.error('Payout sync error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to sync payouts',
+        error: error.message 
+      });
+    }
+  });
+
+  app.post('/api/sync/all', requireAdmin, async (req, res) => {
+    try {
+      const { databaseSync } = await import('./database-sync');
+      await databaseSync.syncAll();
+      res.json({ success: true, message: 'All data synced successfully' });
+    } catch (error) {
+      console.error('Full sync error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to sync all data',
+        error: error.message 
+      });
+    }
+  });
+
+  // Manual sync route for testing without admin requirement
+  app.post('/api/sync/manual', authenticateToken, async (req, res) => {
+    try {
+      const { paystackDatabaseSync } = await import('./paystack-database-sync');
+      console.log('Starting manual Paystack sync...');
+      
+      // Sync transactions to payments table
+      await paystackDatabaseSync.syncTransactionsToPayments();
+      console.log('Paystack transactions synced to payments table');
+      
+      // Sync transfers to payouts table
+      await paystackDatabaseSync.syncTransfersToPayouts();
+      console.log('Paystack transfers synced to payouts table');
+      
+      res.json({ 
+        success: true, 
+        message: 'Manual Paystack sync completed successfully',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Manual Paystack sync error:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Manual Paystack sync failed',
+        error: error.message 
+      });
+    }
+  });
+
+  // Buyer Dashboard API
+  app.get('/api/dashboard/buyer/transactions', authenticateToken, async (req, res) => {
+    try {
+      const user = req.user as any;
+      // Get buyer's orders and related payment info
+      const orders = await storage.getOrdersByBuyer(user.id);
+      
+      // Transform orders to match transaction format
+      const transactions = await Promise.all(orders.map(async (order) => {
+        const vendor = await storage.getUser(order.vendor_id);
+        const product = await storage.getProduct(order.product_id);
+        const payments = await storage.getPaymentsByOrder(order.id);
+        const payment = payments[0]; // Get the first payment for this order
+        
+        return {
+          id: order.id,
+          amount: order.total_amount,
+          currency: 'GHS',
+          item: product?.title || 'Product Purchase',
+          reference: payment?.reference || order.id,
+          status: payment?.status || order.status,
+          paid_at: payment?.paid_at || order.created_at,
+          delivery_time: null,
+          vendor_name: vendor?.business_name || vendor?.full_name,
+          vendor_phone: vendor?.phone,
+          vendor_whatsapp: vendor?.whatsapp,
+          channel: payment?.payment_method || 'unknown',
+          created_at: order.created_at
+        };
+      }));
+
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching buyer transactions:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch transactions' 
+      });
+    }
+  });
+
+  app.get('/api/dashboard/buyer/stats', authenticateToken, async (req, res) => {
+    try {
+      const user = req.user as any;
+      // Get buyer's orders
+      const orders = await storage.getOrdersByBuyer(user.id);
+      
+      // Get payment status for each order
+      const ordersWithPayments = await Promise.all(orders.map(async (order) => {
+        const payments = await storage.getPaymentsByOrder(order.id);
+        const payment = payments[0];
+        return {
+          ...order,
+          payment_status: payment?.status || 'pending'
+        };
+      }));
+      
+      const stats = {
+        total_transactions: orders.length,
+        total_spent: ordersWithPayments
+          .filter(o => o.payment_status === 'success')
+          .reduce((sum, o) => sum + parseFloat(o.total_amount), 0),
+        successful_payments: ordersWithPayments.filter(o => o.payment_status === 'success').length,
+        pending_payments: ordersWithPayments.filter(o => o.payment_status === 'pending').length
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching buyer stats:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch buyer stats' 
+      });
+    }
+  });
+
+  // Vendor Dashboard API - Using existing payments table
+  app.get('/api/dashboard/vendor/transactions', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const db = storage as any;
+      let transactions = [];
+      
+      // Query the payments table directly with JOIN to get buyer and order info
+      if (db.query) {
+        try {
+          const result = await db.query(`
+            SELECT 
+              p.id,
+              p.reference,
+              p.amount,
+              p.currency,
+              p.payment_method as channel,
+              p.status,
+              p.paid_at,
+              p.created_at,
+              p.paystack_reference,
+              p.gateway_response,
+              p.mobile_number,
+              p.network_provider,
+              u.full_name as buyer_name,
+              u.email as buyer_email,
+              u.phone as buyer_phone,
+              u.whatsapp as buyer_whatsapp,
+              o.id as order_id,
+              pr.title as item
+            FROM payments p
+            LEFT JOIN users u ON p.buyer_id = u.id
+            LEFT JOIN orders o ON p.order_id = o.id
+            LEFT JOIN products pr ON o.product_id = pr.id
+            WHERE p.vendor_id = $1
+            ORDER BY p.paid_at DESC, p.created_at DESC
+            LIMIT 100
+          `, [user.id]);
+          
+          transactions = result.rows || [];
+          console.log(`Found ${transactions.length} payments for vendor ${user.id}`);
+        } catch (queryError) {
+          console.log('Database query failed, falling back to storage methods:', queryError.message);
+        }
+      }
+      
+      // If direct query failed, fall back to storage methods
+      if (transactions.length === 0) {
+        console.log('Using storage methods for vendor transactions');
+        const payments = await storage.getPaymentsByVendor(user.id);
+        
+        transactions = await Promise.all(payments.map(async (payment) => {
+          const buyer = await storage.getUser(payment.buyer_id);
+          const order = await storage.getOrder(payment.order_id);
+          const product = order ? await storage.getProduct(order.product_id) : null;
+          
+          return {
+            id: payment.id,
+            reference: payment.reference,
+            amount: payment.amount,
+            currency: payment.currency,
+            item: product?.title || 'Product Purchase',
+            status: payment.status,
+            paid_at: payment.paid_at,
+            buyer_name: buyer?.full_name,
+            buyer_email: buyer?.email,
+            buyer_phone: buyer?.phone,
+            buyer_whatsapp: buyer?.whatsapp,
+            channel: payment.payment_method,
+            created_at: payment.created_at,
+            paystack_reference: payment.paystack_reference,
+            gateway_response: payment.gateway_response,
+            mobile_number: payment.mobile_number,
+            network_provider: payment.network_provider
+          };
+        }));
+      }
+
+      res.json(transactions);
+    } catch (error) {
+      console.error('Error fetching vendor transactions:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch transactions' 
+      });
+    }
+  });
+
+  app.get('/api/dashboard/vendor/payouts', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const db = storage as any;
+      let payouts = [];
+      
+      // Query the payouts table directly
+      if (db.query) {
+        try {
+          const result = await db.query(`
+            SELECT 
+              p.id,
+              p.amount,
+              p.status,
+              p.momo_number,
+              p.transaction_id,
+              p.created_at,
+              p.updated_at,
+              'GHS' as currency,
+              p.transaction_id as reference
+            FROM payouts p
+            WHERE p.vendor_id = $1
+            ORDER BY p.created_at DESC
+            LIMIT 100
+          `, [user.id]);
+          
+          payouts = result.rows || [];
+          console.log(`Found ${payouts.length} payouts for vendor ${user.id}`);
+        } catch (queryError) {
+          console.log('Database query failed, falling back to storage methods:', queryError.message);
+        }
+      }
+      
+      // If direct query failed, fall back to storage methods
+      if (payouts.length === 0) {
+        console.log('Using storage methods for vendor payouts');
+        payouts = await storage.getPayoutsByVendor(user.id);
+      }
+      
+      res.json(payouts);
+    } catch (error) {
+      console.error('Error fetching vendor payouts:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch payouts' 
+      });
+    }
+  });
+
+  app.get('/api/dashboard/vendor/stats', authenticateToken, requireVendor, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const db = storage as any;
+      let stats = {};
+      
+      // Try to get enhanced stats from Paystack sync tables
+      if (db.query) {
+        try {
+          const result = await db.query(`
+            SELECT 
+              -- Payment stats from payments table
+              COUNT(CASE WHEN p.status = 'success' THEN 1 END) as successful_transactions,
+              COALESCE(SUM(CASE WHEN p.status = 'success' THEN p.amount END), 0) as total_sales,
+              COUNT(p.id) as total_transactions,
+              COUNT(CASE WHEN p.status = 'pending' THEN 1 END) as pending_transactions,
+              
+              -- Recent activity
+              COUNT(CASE WHEN p.created_at >= NOW() - INTERVAL '30 days' THEN 1 END) as transactions_last_30_days,
+              COUNT(CASE WHEN p.created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as transactions_last_7_days,
+              COUNT(CASE WHEN p.created_at >= NOW() - INTERVAL '1 day' THEN 1 END) as transactions_today
+              
+            FROM payments p
+            WHERE p.vendor_id = $1
+          `, [user.id]);
+          
+          const payoutResult = await db.query(`
+            SELECT 
+              COUNT(*) as total_payouts,
+              COALESCE(SUM(CASE WHEN po.status = 'success' THEN po.amount END), 0) as total_paid,
+              COALESCE(SUM(CASE WHEN po.status = 'pending' THEN po.amount END), 0) as pending_amount,
+              COUNT(CASE WHEN po.status = 'success' THEN 1 END) as successful_payouts,
+              COUNT(CASE WHEN po.status = 'pending' THEN 1 END) as pending_payouts
+            FROM payouts po
+            WHERE po.vendor_id = $1
+          `, [user.id]);
+          
+          const orderResult = await db.query(`
+            SELECT 
+              COUNT(*) as total_orders,
+              COUNT(CASE WHEN o.status = 'completed' THEN 1 END) as completed_orders,
+              COUNT(CASE WHEN o.status = 'pending' THEN 1 END) as pending_orders
+            FROM orders o
+            WHERE o.vendor_id = $1
+          `, [user.id]);
+          
+          const transactionStats = result.rows[0] || {};
+          const payoutStats = payoutResult.rows[0] || {};
+          const orderStats = orderResult.rows[0] || {};
+          
+          stats = {
+            total_orders: parseInt(orderStats.total_orders || 0),
+            total_sales: parseFloat(transactionStats.total_sales || 0),
+            successful_orders: parseInt(transactionStats.successful_transactions || 0),
+            pending_orders: parseInt(transactionStats.pending_transactions || 0),
+            completed_orders: parseInt(orderStats.completed_orders || 0),
+            total_payouts: parseInt(payoutStats.total_payouts || 0),
+            total_paid: parseFloat(payoutStats.total_paid || 0),
+            pending_amount: parseFloat(payoutStats.pending_amount || 0),
+            successful_payouts: parseInt(payoutStats.successful_payouts || 0),
+            pending_payouts: parseInt(payoutStats.pending_payouts || 0),
+            current_balance: parseFloat(transactionStats.total_sales || 0) - parseFloat(payoutStats.total_paid || 0),
+            currency: 'GHS',
+            transactions_last_30_days: parseInt(transactionStats.transactions_last_30_days || 0),
+            transactions_last_7_days: parseInt(transactionStats.transactions_last_7_days || 0),
+            transactions_today: parseInt(transactionStats.transactions_today || 0)
+          };
+          
+          console.log(`Enhanced stats for vendor ${user.id}:`, stats);
+        } catch (queryError) {
+          console.log('Paystack stats tables not available, falling back to regular stats');
+        }
+      }
+      
+      // If no Paystack stats found, fall back to regular stats
+      if (Object.keys(stats).length === 0) {
+        console.log('Falling back to regular stats calculation');
+        const payments = await storage.getPaymentsByVendor(user.id);
+        const orders = await storage.getOrdersByVendor(user.id);
+        const payouts = await storage.getPayoutsByVendor(user.id);
+        
+        stats = {
+          total_orders: orders.length,
+          total_sales: payments
+            .filter(p => p.status === 'success')
+            .reduce((sum, p) => sum + parseFloat(p.amount), 0),
+          successful_orders: payments.filter(p => p.status === 'success').length,
+          pending_orders: payments.filter(p => p.status === 'pending').length,
+          total_payouts: payouts.length,
+          total_paid: payouts
+            .filter(p => p.status === 'success')
+            .reduce((sum, p) => sum + parseFloat(p.amount), 0),
+          pending_amount: payouts
+            .filter(p => p.status === 'pending')
+            .reduce((sum, p) => sum + parseFloat(p.amount), 0),
+          current_balance: 0,
+          currency: 'GHS'
+        };
+      }
+      
+      // Add product count (always available)
+      const products = await storage.getProductsByVendor(user.id);
+      stats.total_products = products.length;
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching vendor stats:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch vendor stats' 
+      });
+    }
+  });
+
+  // Vendor payments endpoint
+  app.get('/api/vendors/:vendorId/payments', authenticateToken, async (req, res) => {
+    try {
+      const { vendorId } = req.params;
+      const user = req.user;
+      
+      // Check if user can access this vendor's payments
+      if (user.role !== 'admin' && user.id !== vendorId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const payments = await storage.getPaymentsByVendor(vendorId);
+      res.json(payments);
+    } catch (error) {
+      console.error('Error fetching vendor payments:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch vendor payments' 
+      });
+    }
+  });
+
+  // Vendor payouts endpoint
+  app.get('/api/vendors/:vendorId/payouts', authenticateToken, async (req, res) => {
+    try {
+      const { vendorId } = req.params;
+      const user = req.user;
+      
+      // Check if user can access this vendor's payouts
+      if (user.role !== 'admin' && user.id !== vendorId) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      
+      const payouts = await storage.getPayoutsByVendor(vendorId);
+      res.json(payouts);
+    } catch (error) {
+      console.error('Error fetching vendor payouts:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch vendor payouts' 
+      });
+    }
+  });
+
+  // Paystack balance and settlements
+  app.get('/api/paystack/balance', requireAdmin, async (req, res) => {
+    try {
+      const { paystackSync } = await import('./paystack-sync');
+      const balance = await paystackSync.fetchBalance();
+      res.json(balance);
+    } catch (error) {
+      console.error('Error fetching Paystack balance:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch balance' 
+      });
+    }
+  });
+
+  app.get('/api/paystack/settlements', requireAdmin, async (req, res) => {
+    try {
+      const { paystackSync } = await import('./paystack-sync');
+      const settlements = await paystackSync.fetchSettlements();
+      res.json(settlements);
+    } catch (error) {
+      console.error('Error fetching Paystack settlements:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to fetch settlements' 
+      });
+    }
+  });
+
+  return httpServer;
+}
