@@ -196,6 +196,53 @@ export default function BuyerDashboard() {
           </Card>
         </div>
 
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4 text-center">
+              <ShoppingBag className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+              <h3 className="font-medium text-gray-900 mb-1">Cart Dashboard</h3>
+              <p className="text-sm text-gray-500 mb-3">View cart and order history</p>
+              <Button 
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                onClick={() => window.location.href = '/cart-dashboard'}
+              >
+                Open Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4 text-center">
+              <CreditCard className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <h3 className="font-medium text-gray-900 mb-1">Payment Methods</h3>
+              <p className="text-sm text-gray-500 mb-3">Manage payment options</p>
+              <Button 
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = '/payment-methods'}
+              >
+                Manage
+              </Button>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardContent className="p-4 text-center">
+              <TrendingUp className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <h3 className="font-medium text-gray-900 mb-1">Track Orders</h3>
+              <p className="text-sm text-gray-500 mb-3">Monitor delivery status</p>
+              <Button 
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.href = '/track-orders'}
+              >
+                Track
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Transactions Table */}
         <Card>
           <CardHeader>

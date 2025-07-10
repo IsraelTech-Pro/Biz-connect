@@ -55,6 +55,7 @@ import MobileMoney from './pages/policies/mobile-money';
 
 // Contact page
 import ContactVendor from './pages/contact-vendor';
+import CartDashboard from './pages/cart-dashboard';
 
 function Router() {
   return (
@@ -64,6 +65,7 @@ function Router() {
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/vendors" component={Vendors} />
       <Route path="/cart" component={Cart} />
+      <Route path="/cart-dashboard" component={CartDashboard} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/payment-result" component={PaymentResult} />
       <Route path="/orders" component={Orders} />

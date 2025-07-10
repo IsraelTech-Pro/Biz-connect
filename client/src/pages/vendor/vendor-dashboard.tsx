@@ -158,7 +158,8 @@ export default function VendorDashboard() {
   const quickActions = [
     { title: "Add Product", icon: Plus, color: "text-blue-600", bgColor: "bg-blue-100", href: "/vendor/products" },
     { title: "View Orders", icon: MessageSquare, color: "text-green-600", bgColor: "bg-green-100", href: "/vendor/orders" },
-    { title: "Analytics", icon: BarChart3, color: "text-purple-600", bgColor: "bg-purple-100", href: "/vendor/analytics" },
+    { title: "Cart Dashboard", icon: ShoppingBag, color: "text-purple-600", bgColor: "bg-purple-100", href: "/cart-dashboard" },
+    { title: "Analytics", icon: BarChart3, color: "text-indigo-600", bgColor: "bg-indigo-100", href: "/vendor/analytics" },
     { title: "Settings", icon: Settings, color: "text-orange-600", bgColor: "bg-orange-100", href: "/vendor/settings" }
   ];
 
@@ -301,7 +302,7 @@ export default function VendorDashboard() {
             <Zap className="w-5 h-5 mr-2 text-orange-500" />
             Quick Actions
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {quickActions.map((action, index) => (
               <motion.div
                 key={action.title}
@@ -606,18 +607,33 @@ export default function VendorDashboard() {
                             </div>
                             <div>
                               <p className="font-medium text-gray-900">
-                                {payout.transaction_id || `Payout #${payout.id.slice(-8)}`}
+                                {payout.reference || payout.transaction_id || `Payout #${payout.id.slice(-8)}`}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {payout.momo_number} • {new Date(payout.created_at).toLocaleDateString()}
+                                {payout.momo_number || payout.recipient_code || 'Mobile Money'} • {new Date(payout.created_at).toLocaleDateString()}
                               </p>
+                              {payout.reason && (
+                                <p className="text-xs text-gray-400 mt-1 truncate max-w-[180px]">
+                                  {payout.reason}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center space-x-4">
-                            <Badge className={payout.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            <Badge className={
+                              payout.status === 'success' ? 'bg-green-100 text-green-800' : 
+                              payout.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              payout.status === 'failed' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }>
                               {payout.status}
                             </Badge>
-                            <span className="font-semibold text-gray-900">₵{payout.amount}</span>
+                            <div className="text-right">
+                              <span className="font-semibold text-gray-900">₵{payout.amount}</span>
+                              {payout.transfer_code && (
+                                <p className="text-xs text-gray-400">{payout.transfer_code}</p>
+                              )}
+                            </div>
                           </div>
                         </motion.div>
                       ))}
