@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -365,6 +365,9 @@ export default function VendorOrders() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Order Details</DialogTitle>
+              <DialogDescription>
+                View complete order information and customer details.
+              </DialogDescription>
             </DialogHeader>
             {selectedOrder && (
               <div className="space-y-6">
@@ -379,7 +382,7 @@ export default function VendorOrders() {
                         </Badge>
                       </p>
                       <p><span className="font-medium">Date:</span> {new Date(selectedOrder.created_at).toLocaleDateString()}</p>
-                      <p><span className="font-medium">Amount:</span> ₵{selectedOrder.amount}</p>
+                      <p><span className="font-medium">Amount:</span> ₵{selectedOrder.total_amount}</p>
                     </div>
                   </div>
                   
@@ -388,7 +391,7 @@ export default function VendorOrders() {
                     <div className="space-y-1 text-sm">
                       <p><span className="font-medium">Name:</span> {selectedOrder.buyer_name || 'N/A'}</p>
                       <p><span className="font-medium">Email:</span> {selectedOrder.buyer_email || 'N/A'}</p>
-                      <p><span className="font-medium">Phone:</span> {selectedOrder.buyer_phone || 'N/A'}</p>
+                      <p><span className="font-medium">Phone:</span> {selectedOrder.phone || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
@@ -396,7 +399,7 @@ export default function VendorOrders() {
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Delivery Information</h4>
                   <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm">{selectedOrder.delivery_address || 'No delivery address provided'}</p>
+                    <p className="text-sm">{selectedOrder.shipping_address || 'No delivery address provided'}</p>
                   </div>
                 </div>
                 
