@@ -1229,6 +1229,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create payment endpoint
+  app.post('/api/payments', authenticateToken, async (req, res) => {
+    try {
+      const paymentData = insertPaymentSchema.parse(req.body);
+      const payment = await storage.createPayment(paymentData);
+      res.json(payment);
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      res.status(500).json({ message: 'Failed to create payment' });
+    }
+  });
+
   // Test endpoint to create a payment record for testing callback
   app.post('/api/payments/create-test', async (req, res) => {
     try {
