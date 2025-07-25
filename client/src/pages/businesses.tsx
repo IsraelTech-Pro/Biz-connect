@@ -101,17 +101,23 @@ export default function Businesses() {
     queryKey: ['/api/vendors'],
   }) as { data: any[], isLoading: boolean };
 
-  // Categories matching homepage sections
+  // Fetch platform stats to get real categories
+  const { data: platformStats } = useQuery({
+    queryKey: ['/api/platform/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/platform/stats');
+      if (!response.ok) throw new Error('Failed to fetch platform stats');
+      return response.json();
+    }
+  });
+
+  // Build categories from real database data
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'tech-and-innovation', label: 'Tech & Innovation' },
-    { value: 'fashion-and-design', label: 'Fashion & Design' },
-    { value: 'food-and-catering', label: 'Food & Catering' },
-    { value: 'services', label: 'Services' },
-    { value: 'arts-and-crafts', label: 'Arts & Crafts' },
-    { value: 'digital-marketing', label: 'Digital Marketing' },
-    { value: 'education-and-tutoring', label: 'Education & Tutoring' },
-    { value: 'health-and-wellness', label: 'Health & Wellness' }
+    ...(platformStats?.categories || []).map((cat: any) => ({
+      value: cat.normalizedName,
+      label: cat.name
+    }))
   ];
 
   // Only use real data from database - no hardcoded fallbacks
