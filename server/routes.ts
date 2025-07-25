@@ -768,6 +768,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Vendor dashboard routes
+  app.get('/api/vendor/dashboard/stats', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const user = await storage.getUserById(userId);
+      
+      if (!user || user.role !== 'vendor') {
+        return res.status(403).json({ message: 'Vendor access required' });
+      }
+
+      // Get vendor products count
+      const allProducts = await storage.getProducts({});
+      const vendorProducts = allProducts.filter(p => p.vendor_id === userId);
+      
+      // Get vendor orders
+      const allOrders = await storage.getOrders();
+      const vendorOrders = allOrders.filter(order => 
+        vendorProducts.some(product => product.id === order.product_id)
+      );
+      
+      // Calculate stats
+      const totalProducts = vendorProducts.length;
+      const totalOrders = vendorOrders.length;
+      const totalSales = vendorOrders.reduce((sum, order) => sum + order.total_amount, 0);
+      const pendingPayouts = vendorOrders
+        .filter(order => order.status === 'completed')
+        .reduce((sum, order) => sum + order.total_amount, 0) * 0.85; // 85% after platform fee
+      
+      const stats = {
+        totalProducts,
+        totalOrders,
+        totalSales,
+        pendingPayouts,
+        viewsThisMonth: Math.floor(Math.random() * 500) + 100, // Mock data for now
+        averageRating: 4.2 + Math.random() * 0.8 // Mock data for now
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching vendor dashboard stats:', error);
+      res.status(500).json({ message: 'Failed to fetch dashboard stats' });
+    }
+  });
+
+  app.get('/api/vendor/orders/recent', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const user = await storage.getUserById(userId);
+      
+      if (!user || user.role !== 'vendor') {
+        return res.status(403).json({ message: 'Vendor access required' });
+      }
+
+      // Get vendor products
+      const allProducts = await storage.getProducts({});
+      const vendorProducts = allProducts.filter(p => p.vendor_id === userId);
+      
+      // Get recent orders for vendor products
+      const allOrders = await storage.getOrders();
+      const vendorOrders = allOrders
+        .filter(order => vendorProducts.some(product => product.id === order.product_id))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10); // Get 10 most recent
+
+      // Format orders with customer info
+      const formattedOrders = await Promise.all(
+        vendorOrders.map(async (order) => {
+          const customer = await storage.getUserById(order.user_id);
+          return {
+            id: order.id,
+            customer_name: customer?.full_name || 'Unknown Customer',
+            total_amount: order.total_amount,
+            status: order.status,
+            created_at: order.created_at,
+            product_count: 1 // For now, assuming 1 product per order
+          };
+        })
+      );
+
+      res.json(formattedOrders);
+    } catch (error) {
+      console.error('Error fetching vendor recent orders:', error);
+      res.status(500).json({ message: 'Failed to fetch recent orders' });
+    }
+  });
+
+  app.get('/api/vendor/products', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user?.id;
+      const user = await storage.getUserById(userId);
+      
+      if (!user || user.role !== 'vendor') {
+        return res.status(403).json({ message: 'Vendor access required' });
+      }
+
+      const allProducts = await storage.getProducts({});
+      const vendorProducts = allProducts.filter(p => p.vendor_id === userId);
+      
+      res.json(vendorProducts);
+    } catch (error) {
+      console.error('Error fetching vendor products:', error);
+      res.status(500).json({ message: 'Failed to fetch vendor products' });
+    }
+  });
+
   // Admin routes
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {

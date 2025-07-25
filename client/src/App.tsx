@@ -46,6 +46,7 @@ import VendorSettings from "@/pages/vendor/settings";
 
 // Dashboards
 import BuyerDashboard from "@/pages/buyer-dashboard";
+import VendorDashboard from "@/pages/vendor-dashboard";
 
 // Admin functionality
 import AdminLogin from "./pages/admin/admin-login";
@@ -110,6 +111,8 @@ function Router() {
       
       {/* Dashboards */}
       <Route path="/dashboard/buyer" component={BuyerDashboard} />
+      <Route path="/dashboard/vendor" component={VendorDashboard} />
+      <Route path="/vendor/dashboard" component={VendorDashboard} />
       
       {/* Admin functionality */}
       <Route path="/admin/login" component={AdminLogin} />
