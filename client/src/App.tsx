@@ -10,32 +10,51 @@ import { Footer } from "@/components/layout/footer";
 import { ShoppingCartModal } from "@/components/shopping-cart";
 import { PaymentCallbackHandler } from "@/components/payment-callback-handler";
 import { PaymentSuccessNotice } from "@/components/payment-success-notice";
+// Core pages
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
 import KTUHome from "@/pages/ktu-home";
-import Products from "@/pages/products/index";
-import Businesses from "@/pages/businesses";
-import ProductsListing from "@/pages/products-listing";
 import ProductDetail from "@/pages/product-detail";
 import Vendors from "@/pages/vendors";
 import VendorStore from "@/pages/vendor-store";
 import VendorDetail from "@/pages/vendor-detail";
+
+// KTU specific pages
+import Businesses from "@/pages/businesses";
+import ProductsListing from "@/pages/products-listing";
+import BusinessResources from "./pages/business-resources";
+import CommunityForum from "./pages/community-forum";
+import MentorshipHub from "./pages/mentorship-hub";
+
+// Commerce pages
 import Cart from "@/pages/cart";
 import Checkout from "@/pages/checkout";
+import PaymentResult from "@/pages/payment-result";
+import Orders from "@/pages/orders";
+import CartDashboard from './pages/cart-dashboard';
+
+// Authentication pages
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 import VendorRegister from "@/pages/vendor/vendor-register";
-import PaymentResult from "@/pages/payment-result";
-import Orders from "@/pages/orders";
-import VendorDashboard from "@/pages/vendor/vendor-dashboard";
+
+// Dashboard pages
 import BuyerDashboard from "@/pages/buyer-dashboard";
-import VendorDashboardNew from "@/pages/vendor-dashboard";
+import VendorDashboard from "@/pages/vendor/vendor-dashboard";
 import VendorProducts from "@/pages/vendor/products";
 import VendorProductsGrid from "@/pages/vendor/products-grid";
 import VendorOrders from "@/pages/vendor/orders";
 import VendorAnalytics from "@/pages/vendor/analytics";
 import VendorSettings from "@/pages/vendor/settings";
-// import AdminDashboard from "@/pages/admin/dashboard"; // Using KTU admin dashboard instead
+
+// Admin pages
+import AdminLogin from "./pages/admin/admin-login";
+import AdminDashboard from "./pages/admin/admin-dashboard";
+import AddMentor from "./pages/admin/mentors/add";
+import AddProgram from "./pages/admin/programs/add";
+import AddResource from "./pages/admin/resources/add";
+import MentorsList from "./pages/admin/mentors/list";
+import ProgramsList from "./pages/admin/programs/list";
+import ResourcesList from "./pages/admin/resources/list";
 import AdminVendors from "@/pages/admin/vendors";
 import AdminSettings from "@/pages/admin/settings";
 
@@ -58,35 +77,16 @@ import MobileMoney from './pages/policies/mobile-money';
 
 // Contact page
 import ContactVendor from './pages/contact-vendor';
-import CartDashboard from './pages/cart-dashboard';
-import KTUBusinesses from "./pages/businesses";
-import KTUProductsListing from "./pages/products-listing";
-import Mentorship from "./pages/mentorship";
-import KTUAdminDashboard from "./pages/admin-dashboard";
-import AdminLogin from "./pages/admin/admin-login";
-import AdminDashboard from "./pages/admin/admin-dashboard";
-import AddMentor from "./pages/admin/mentors/add";
-import AddProgram from "./pages/admin/programs/add";
-import AddResource from "./pages/admin/resources/add";
-import MentorsList from "./pages/admin/mentors/list";
-import ProgramsList from "./pages/admin/programs/list";
-import ResourcesList from "./pages/admin/resources/list";
-import BusinessResources from "./pages/business-resources";
-import CommunityForum from "./pages/community-forum";
-import MentorshipHub from "./pages/mentorship-hub";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={KTUHome} />
-      <Route path="/old-home" component={Home} />
-      <Route path="/businesses" component={KTUBusinesses} />
+      <Route path="/businesses" component={Businesses} />
       <Route path="/mentorship" component={MentorshipHub} />
       <Route path="/resources" component={BusinessResources} />
       <Route path="/community" component={CommunityForum} />
-      <Route path="/admin" component={KTUAdminDashboard} />
-      <Route path="/products" component={Products} />
-      <Route path="/products-listing" component={KTUProductsListing} />
+      <Route path="/products" component={ProductsListing} />
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/vendors" component={Vendors} />
       <Route path="/cart" component={Cart} />
@@ -98,7 +98,6 @@ function Router() {
       <Route path="/auth/register" component={Register} />
       <Route path="/vendor/register" component={VendorRegister} />
       <Route path="/vendor/dashboard" component={VendorDashboard} />
-      <Route path="/dashboard/vendor" component={VendorDashboardNew} />
       <Route path="/dashboard/buyer" component={BuyerDashboard} />
       <Route path="/vendor/products" component={VendorProducts} />
       <Route path="/vendor/products/grid" component={VendorProductsGrid} />
