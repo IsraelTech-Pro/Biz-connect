@@ -17,7 +17,9 @@ import {
   Shield,
   Activity,
   Target,
-  FileText
+  FileText,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,6 +37,8 @@ interface AdminStats {
   pendingApprovals: number;
   activePrograms: number;
   totalMentors: number;
+  totalResources: number;
+  publishedResources: number;
 }
 
 interface Business {
@@ -42,7 +46,7 @@ interface Business {
   business_name: string;
   full_name: string;
   email: string;
-  status: string;
+  is_approved: boolean;
   created_at: string;
   total_products: number;
   total_sales: number;
@@ -53,13 +57,42 @@ interface User {
   full_name: string;
   email: string;
   role: string;
-  status: string;
+  is_approved: boolean;
   created_at: string;
 }
 
 export default function AdminDashboard() {
   const { user, token } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleBusinessApproval = async (businessId: string, approved: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/vendors/${businessId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ approved })
+      });
+
+      if (!response.ok) throw new Error('Failed to update business status');
+
+      toast({
+        title: "Business Updated",
+        description: `Business ${approved ? 'approved' : 'rejected'} successfully.`,
+      });
+      
+      refetchBusinesses();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update business status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
@@ -73,7 +106,7 @@ export default function AdminDashboard() {
     enabled: !!token && user?.role === 'admin'
   });
 
-  const { data: businesses = [], isLoading: businessesLoading } = useQuery<Business[]>({
+  const { data: businesses = [], isLoading: businessesLoading, refetch: refetchBusinesses } = useQuery<Business[]>({
     queryKey: ['/api/admin/businesses'],
     queryFn: async () => {
       const response = await fetch('/api/admin/businesses', {
@@ -171,6 +204,13 @@ export default function AdminDashboard() {
       bgColor: "bg-teal-50"
     },
     {
+      title: "Published Resources",
+      value: stats?.publishedResources || 0,
+      icon: FileText,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50"
+    },
+    {
       title: "System Health",
       value: "98.5%",
       icon: Activity,
@@ -181,25 +221,25 @@ export default function AdminDashboard() {
 
   const quickActions = [
     {
-      title: "Add New Mentor",
-      description: "Create mentor profiles and assign programs",
-      icon: Plus,
+      title: "Manage Mentors",
+      description: "View, add, and manage business mentors",
+      icon: BookOpen,
       color: "bg-ktu-orange",
-      action: "/admin/mentors/add"
+      action: "/admin/mentors"
     },
     {
-      title: "Create Program",
-      description: "Add new mentorship or training programs",
+      title: "Manage Programs",
+      description: "Create and manage training programs",
       icon: Target,
       color: "bg-ktu-deep-blue",
-      action: "/admin/programs/add"
+      action: "/admin/programs"
     },
     {
-      title: "Add Resource",
-      description: "Upload business resources and guides",
+      title: "Manage Resources",
+      description: "Add and organize business resources",
       icon: FileText,
       color: "bg-purple-600",
-      action: "/admin/resources/add"
+      action: "/admin/resources"
     },
     {
       title: "System Settings",
@@ -370,8 +410,8 @@ export default function AdminDashboard() {
                             <p className="font-medium text-gray-900">{business.business_name}</p>
                             <p className="text-sm text-gray-500">{business.full_name}</p>
                           </div>
-                          <Badge className={business.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {business.status}
+                          <Badge className={business.is_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {business.is_approved ? 'Approved' : 'Pending'}
                           </Badge>
                         </div>
                       ))}
@@ -430,16 +470,32 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <Badge className={business.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {business.status}
+                          <Badge className={business.is_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                            {business.is_approved ? 'Approved' : 'Pending'}
                           </Badge>
+                          {!business.is_approved && (
+                            <>
+                              <Button 
+                                size="sm" 
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleBusinessApproval(business.id, true)}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => handleBusinessApproval(business.id, false)}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
                           <Button variant="outline" size="sm">
                             <Eye className="w-4 h-4 mr-1" />
                             View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
                           </Button>
                         </div>
                       </div>
@@ -479,8 +535,8 @@ export default function AdminDashboard() {
                           }>
                             {user.role}
                           </Badge>
-                          <Badge className={user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                            {user.status}
+                          <Badge className={user.is_approved ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            {user.is_approved ? 'Active' : 'Inactive'}
                           </Badge>
                           <Button variant="outline" size="sm">
                             <Edit className="w-4 h-4 mr-1" />

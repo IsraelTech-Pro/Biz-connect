@@ -67,6 +67,9 @@ import AdminDashboard from "./pages/admin/admin-dashboard";
 import AddMentor from "./pages/admin/mentors/add";
 import AddProgram from "./pages/admin/programs/add";
 import AddResource from "./pages/admin/resources/add";
+import MentorsList from "./pages/admin/mentors/list";
+import ProgramsList from "./pages/admin/programs/list";
+import ResourcesList from "./pages/admin/resources/list";
 import BusinessResources from "./pages/business-resources";
 import CommunityForum from "./pages/community-forum";
 import MentorshipHub from "./pages/mentorship-hub";
@@ -103,8 +106,11 @@ function Router() {
       <Route path="/vendor/settings" component={VendorSettings} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/mentors/add" component={AddMentor} />
+      <Route path="/admin/mentors" component={MentorsList} />
       <Route path="/admin/programs/add" component={AddProgram} />
+      <Route path="/admin/programs" component={ProgramsList} />
       <Route path="/admin/resources/add" component={AddResource} />
+      <Route path="/admin/resources" component={ResourcesList} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/stores/:id" component={VendorStore} />

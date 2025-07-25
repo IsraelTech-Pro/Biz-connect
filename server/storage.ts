@@ -1,4 +1,4 @@
-import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment } from "@shared/schema";
+import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, and, desc, sql, like, or } from "drizzle-orm";
 import pg from "pg";
@@ -105,6 +105,28 @@ export interface IStorage {
   
   // Users lookup
   getUsers(): Promise<User[]>;
+  
+  // Admin management methods
+  // Mentors
+  getMentors(): Promise<Mentor[]>;
+  getMentor(id: string): Promise<Mentor | undefined>;
+  createMentor(mentor: InsertMentor): Promise<Mentor>;
+  updateMentor(id: string, mentor: Partial<InsertMentor>): Promise<Mentor>;
+  deleteMentor(id: string): Promise<void>;
+  
+  // Programs
+  getPrograms(): Promise<Program[]>;
+  getProgram(id: string): Promise<Program | undefined>;
+  createProgram(program: InsertProgram): Promise<Program>;
+  updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program>;
+  deleteProgram(id: string): Promise<void>;
+  
+  // Resources
+  getResources(): Promise<Resource[]>;
+  getResource(id: string): Promise<Resource | undefined>;
+  createResource(resource: InsertResource): Promise<Resource>;
+  updateResource(id: string, resource: Partial<InsertResource>): Promise<Resource>;
+  deleteResource(id: string): Promise<void>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -499,6 +521,94 @@ export class PostgresStorage implements IStorage {
   async getUsers(): Promise<User[]> {
     if (!db) throw new Error('Database not available');
     return await db.select().from(users);
+  }
+
+  // Admin management implementations
+  // Mentors
+  async getMentors(): Promise<Mentor[]> {
+    if (!db) throw new Error('Database not available');
+    return await db.select().from(mentors).orderBy(desc(mentors.created_at));
+  }
+
+  async getMentor(id: string): Promise<Mentor | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(mentors).where(eq(mentors.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createMentor(mentor: InsertMentor): Promise<Mentor> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(mentors).values(mentor).returning();
+    return result[0];
+  }
+
+  async updateMentor(id: string, mentor: Partial<InsertMentor>): Promise<Mentor> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(mentors).set(mentor).where(eq(mentors.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteMentor(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.delete(mentors).where(eq(mentors.id, id));
+  }
+
+  // Programs
+  async getPrograms(): Promise<Program[]> {
+    if (!db) throw new Error('Database not available');
+    return await db.select().from(programs).orderBy(desc(programs.created_at));
+  }
+
+  async getProgram(id: string): Promise<Program | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(programs).where(eq(programs.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createProgram(program: InsertProgram): Promise<Program> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(programs).values(program).returning();
+    return result[0];
+  }
+
+  async updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(programs).set(program).where(eq(programs.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteProgram(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.delete(programs).where(eq(programs.id, id));
+  }
+
+  // Resources
+  async getResources(): Promise<Resource[]> {
+    if (!db) throw new Error('Database not available');
+    return await db.select().from(resources).orderBy(desc(resources.created_at));
+  }
+
+  async getResource(id: string): Promise<Resource | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(resources).where(eq(resources.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createResource(resource: InsertResource): Promise<Resource> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(resources).values(resource).returning();
+    return result[0];
+  }
+
+  async updateResource(id: string, resource: Partial<InsertResource>): Promise<Resource> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(resources).set(resource).where(eq(resources.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteResource(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.delete(resources).where(eq(resources.id, id));
   }
 }
 

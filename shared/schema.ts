@@ -216,6 +216,83 @@ export const insertTransactionSchema = createInsertSchema(transactions).omit({
   updated_at: true,
 });
 
+// Admin management tables
+export const mentors = pgTable("mentors", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  full_name: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  company: text("company").notNull(),
+  position: text("position").notNull(),
+  expertise: text("expertise").notNull(),
+  bio: text("bio").notNull(),
+  years_experience: integer("years_experience").notNull(),
+  specializations: text("specializations"),
+  availability: text("availability").notNull().default("weekends"),
+  status: text("status").notNull().default("active"), // active, inactive
+  profile_image: text("profile_image"),
+  linkedin_url: text("linkedin_url"),
+  twitter_url: text("twitter_url"),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const programs = pgTable("programs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  duration: text("duration").notNull(),
+  max_participants: integer("max_participants").notNull(),
+  program_type: text("program_type").notNull().default("mentorship"), // mentorship, workshop, bootcamp, course, seminar
+  start_date: timestamp("start_date").notNull(),
+  end_date: timestamp("end_date").notNull(),
+  requirements: text("requirements"),
+  outcomes: text("outcomes"),
+  status: text("status").notNull().default("active"), // active, upcoming, completed, cancelled
+  participants_count: integer("participants_count").default(0),
+  mentor_id: uuid("mentor_id").references(() => mentors.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const resources = pgTable("resources", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull().default("business-plan"), // business-plan, marketing, finance, legal, operations, technology, personal-development
+  resource_type: text("resource_type").notNull().default("guide"), // guide, template, checklist, video, webinar, ebook, tool
+  file_url: text("file_url"),
+  external_link: text("external_link"),
+  tags: text("tags").array().default([]),
+  difficulty_level: text("difficulty_level").notNull().default("beginner"), // beginner, intermediate, advanced
+  estimated_time: text("estimated_time"),
+  status: text("status").notNull().default("published"), // published, draft, archived
+  views: integer("views").default(0),
+  downloads: integer("downloads").default(0),
+  created_by: uuid("created_by").references(() => users.id),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMentorSchema = createInsertSchema(mentors).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertProgramSchema = createInsertSchema(programs).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertResourceSchema = createInsertSchema(resources).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -234,3 +311,9 @@ export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type Mentor = typeof mentors.$inferSelect;
+export type InsertMentor = z.infer<typeof insertMentorSchema>;
+export type Program = typeof programs.$inferSelect;
+export type InsertProgram = z.infer<typeof insertProgramSchema>;
+export type Resource = typeof resources.$inferSelect;
+export type InsertResource = z.infer<typeof insertResourceSchema>;

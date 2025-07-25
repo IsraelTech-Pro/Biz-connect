@@ -1993,19 +1993,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin API endpoints
+  // Admin API endpoints with real data
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
       const allProducts = await storage.getProducts();
       const allOrders = await storage.getOrders();
+      const allMentors = await storage.getMentors();
+      const allPrograms = await storage.getPrograms();
+      const allResources = await storage.getResources();
       
       const vendors = allUsers.filter(u => u.role === 'vendor');
       const totalRevenue = allOrders
         .filter(o => o.status === 'completed')
         .reduce((sum, o) => sum + parseFloat(o.total_amount || '0'), 0);
       
-      const pendingApprovals = vendors.filter(v => v.status === 'pending').length;
+      const pendingApprovals = vendors.filter(v => !v.is_approved).length;
+      const activePrograms = allPrograms.filter(p => p.status === 'active').length;
+      const activeMentors = allMentors.filter(m => m.status === 'active').length;
       
       const stats = {
         totalUsers: allUsers.length,
@@ -2014,8 +2019,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalOrders: allOrders.length,
         totalRevenue: totalRevenue,
         pendingApprovals: pendingApprovals,
-        activePrograms: 5, // Mock data - would come from programs table
-        totalMentors: 8 // Mock data - would come from mentors table
+        activePrograms: activePrograms,
+        totalMentors: activeMentors,
+        totalResources: allResources.length,
+        publishedResources: allResources.filter(r => r.status === 'published').length
       };
       
       res.json(stats);
@@ -2043,7 +2050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             business_name: vendor.business_name || vendor.full_name,
             full_name: vendor.full_name,
             email: vendor.email,
-            status: vendor.status || 'approved',
+            is_approved: vendor.is_approved || false,
             created_at: vendor.created_at,
             total_products: products.length,
             total_sales: totalSales
@@ -2066,7 +2073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
-        status: user.status || 'active',
+        is_approved: user.is_approved || false,
         created_at: user.created_at
       }));
       
@@ -2081,13 +2088,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/vendors/:vendorId/status', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { vendorId } = req.params;
-      const { status } = req.body;
+      const { approved } = req.body;
       
-      if (!['approved', 'rejected', 'pending'].includes(status)) {
-        return res.status(400).json({ message: 'Invalid status' });
+      if (typeof approved !== 'boolean') {
+        return res.status(400).json({ message: 'Invalid approval status' });
       }
       
-      const updatedUser = await storage.updateUser(vendorId, { status });
+      const updatedUser = await storage.updateUser(vendorId, { is_approved: approved });
       res.json(updatedUser);
     } catch (error) {
       console.error('Error updating vendor status:', error);
@@ -2120,21 +2127,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin endpoints for mentors, programs, and resources
+  // Admin endpoints for mentors with full CRUD
+  app.get('/api/admin/mentors', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const mentors = await storage.getMentors();
+      res.json(mentors);
+    } catch (error) {
+      console.error('Error fetching mentors:', error);
+      res.status(500).json({ message: 'Failed to fetch mentors' });
+    }
+  });
+
   app.post('/api/admin/mentors', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      // Mock implementation - would save to mentors table
       const mentorData = req.body;
-      console.log('Creating mentor:', mentorData);
-      
-      // In a real implementation, you would save to a mentors table
-      const mentor = {
-        id: Date.now().toString(),
-        ...mentorData,
-        created_at: new Date().toISOString(),
-        status: 'active'
-      };
-      
+      const mentor = await storage.createMentor(mentorData);
       res.json(mentor);
     } catch (error) {
       console.error('Error creating mentor:', error);
@@ -2142,20 +2149,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const mentor = await storage.getMentor(id);
+      if (!mentor) {
+        return res.status(404).json({ message: 'Mentor not found' });
+      }
+      res.json(mentor);
+    } catch (error) {
+      console.error('Error fetching mentor:', error);
+      res.status(500).json({ message: 'Failed to fetch mentor' });
+    }
+  });
+
+  app.patch('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const mentor = await storage.updateMentor(id, updates);
+      res.json(mentor);
+    } catch (error) {
+      console.error('Error updating mentor:', error);
+      res.status(500).json({ message: 'Failed to update mentor' });
+    }
+  });
+
+  app.delete('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteMentor(id);
+      res.json({ message: 'Mentor deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting mentor:', error);
+      res.status(500).json({ message: 'Failed to delete mentor' });
+    }
+  });
+
+  // Admin endpoints for programs with full CRUD
+  app.get('/api/admin/programs', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const programs = await storage.getPrograms();
+      res.json(programs);
+    } catch (error) {
+      console.error('Error fetching programs:', error);
+      res.status(500).json({ message: 'Failed to fetch programs' });
+    }
+  });
+
   app.post('/api/admin/programs', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      // Mock implementation - would save to programs table
       const programData = req.body;
-      console.log('Creating program:', programData);
-      
-      // In a real implementation, you would save to a programs table
-      const program = {
-        id: Date.now().toString(),
-        ...programData,
-        created_at: new Date().toISOString(),
-        participants_count: 0
-      };
-      
+      const program = await storage.createProgram(programData);
       res.json(program);
     } catch (error) {
       console.error('Error creating program:', error);
@@ -2163,24 +2208,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const program = await storage.getProgram(id);
+      if (!program) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+      res.json(program);
+    } catch (error) {
+      console.error('Error fetching program:', error);
+      res.status(500).json({ message: 'Failed to fetch program' });
+    }
+  });
+
+  app.patch('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const program = await storage.updateProgram(id, updates);
+      res.json(program);
+    } catch (error) {
+      console.error('Error updating program:', error);
+      res.status(500).json({ message: 'Failed to update program' });
+    }
+  });
+
+  app.delete('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteProgram(id);
+      res.json({ message: 'Program deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting program:', error);
+      res.status(500).json({ message: 'Failed to delete program' });
+    }
+  });
+
+  // Admin endpoints for resources with full CRUD
+  app.get('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const resources = await storage.getResources();
+      res.json(resources);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      res.status(500).json({ message: 'Failed to fetch resources' });
+    }
+  });
+
   app.post('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
     try {
-      // Mock implementation - would save to resources table
-      const resourceData = req.body;
-      console.log('Creating resource:', resourceData);
-      
-      // In a real implementation, you would save to a resources table
-      const resource = {
-        id: Date.now().toString(),
-        ...resourceData,
-        created_at: new Date().toISOString(),
-        views: 0
+      const resourceData = {
+        ...req.body,
+        created_by: req.user?.id
       };
-      
+      const resource = await storage.createResource(resourceData);
       res.json(resource);
     } catch (error) {
       console.error('Error creating resource:', error);
       res.status(500).json({ message: 'Failed to create resource' });
+    }
+  });
+
+  app.get('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await storage.getResource(id);
+      if (!resource) {
+        return res.status(404).json({ message: 'Resource not found' });
+      }
+      res.json(resource);
+    } catch (error) {
+      console.error('Error fetching resource:', error);
+      res.status(500).json({ message: 'Failed to fetch resource' });
+    }
+  });
+
+  app.patch('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const resource = await storage.updateResource(id, updates);
+      res.json(resource);
+    } catch (error) {
+      console.error('Error updating resource:', error);
+      res.status(500).json({ message: 'Failed to update resource' });
+    }
+  });
+
+  app.delete('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteResource(id);
+      res.json({ message: 'Resource deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      res.status(500).json({ message: 'Failed to delete resource' });
     }
   });
 
