@@ -19,7 +19,7 @@ const BusinessCard = ({ business, index }: { business: any; index: number }) => 
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Link to={`/stores/${business.id}`}>
+      <Link href={`/stores/${business.id}`}>
         <Card className="ktu-card animate-card-lift h-full group cursor-pointer">
           <div className="relative overflow-hidden">
             <img 

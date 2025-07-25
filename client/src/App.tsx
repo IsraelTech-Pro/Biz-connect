@@ -115,7 +115,7 @@ function Router() {
       <Route path="/admin/resources" component={ResourcesList} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />
-      <Route path="/stores/:id" component={VendorStore} />
+      <Route path="/stores/:vendorId" component={VendorStore} />
       <Route path="/vendor/:id" component={VendorDetail} />
       
       {/* Buyer pages */}

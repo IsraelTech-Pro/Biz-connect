@@ -13,32 +13,32 @@ import { Separator } from '@/components/ui/separator';
 import type { User, Product } from '@shared/schema';
 
 export default function VendorStore() {
-  const { id } = useParams<{ id: string }>();
+  const { vendorId } = useParams<{ vendorId: string }>();
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('name');
 
   const { data: vendor, isLoading: vendorLoading } = useQuery<User>({
-    queryKey: ['/api/users', id],
+    queryKey: ['/api/users', vendorId],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${id}`);
+      const response = await fetch(`/api/users/${vendorId}`);
       if (!response.ok) throw new Error('Vendor not found');
       return response.json();
     },
-    enabled: !!id,
+    enabled: !!vendorId,
   });
 
   const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ['/api/products', 'vendor', id],
+    queryKey: ['/api/products', 'vendor', vendorId],
     queryFn: async () => {
-      const response = await fetch(`/api/products?vendor=${id}`);
+      const response = await fetch(`/api/products?vendor=${vendorId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
-    enabled: !!id,
+    enabled: !!vendorId,
   });
 
   const filteredProducts = Array.isArray(products) ? products.filter(product =>

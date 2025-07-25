@@ -16,7 +16,7 @@ import type { Product, User } from '@shared/schema';
 // KTU BizConnect Business Card Component
 const BusinessCard = ({ business }: { business: any }) => {
   return (
-    <Link href={`/vendor-store?vendor=${business.id}`} className="block h-full">
+    <Link href={`/stores/${business.id}`} className="block h-full">
       <div className="ktu-card animate-card-lift h-full group">
         <div className="relative overflow-hidden">
           <img 
