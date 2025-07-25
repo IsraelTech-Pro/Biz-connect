@@ -175,7 +175,7 @@ export default function VendorDashboard() {
 
   if (statsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-ktu-grey py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
@@ -194,7 +194,7 @@ export default function VendorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-ktu-grey py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -205,7 +205,7 @@ export default function VendorDashboard() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-black mb-2">
+              <h1 className="text-2xl font-bold text-ktu-deep-blue mb-2">
                 Welcome back, {user?.business_name || user?.full_name}! 
                 <motion.span
                   animate={{ rotate: [0, 15, 0] }}
@@ -215,7 +215,7 @@ export default function VendorDashboard() {
                   👋
                 </motion.span>
               </h1>
-              <p className="text-gray-600">Here's what's happening with your store today</p>
+              <p className="text-ktu-dark-grey">Manage your KTU student business and track your entrepreneurial journey</p>
             </div>
             <div className="flex items-center space-x-4">
               <select
@@ -227,8 +227,8 @@ export default function VendorDashboard() {
                 <option value="30d">Last 30 days</option>
                 <option value="90d">Last 90 days</option>
               </select>
-              <Link href="/vendor/analytics">
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+              <Link to="/vendor/analytics">
+                <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
                   <Activity className="w-4 h-4 mr-2" />
                   View Analytics
                 </Button>
@@ -423,8 +423,8 @@ export default function VendorDashboard() {
                     <Package className="w-5 h-5 mr-2 text-gray-700" />
                     My Products
                   </span>
-                  <Link href="/vendor/products/grid">
-                    <Button variant="outline" size="sm" className="text-gray-600 hover:text-gray-900">
+                  <Link to="/vendor/products/grid">
+                    <Button variant="outline" size="sm" className="text-ktu-deep-blue hover:text-ktu-orange">
                       <Eye className="w-4 h-4 mr-2" />
                       View All
                     </Button>
@@ -441,8 +441,8 @@ export default function VendorDashboard() {
                     <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500">No products yet</p>
                     <p className="text-sm text-gray-400 mb-4">Add your first product to start selling</p>
-                    <Link href="/vendor/products">
-                      <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <Link to="/vendor/products">
+                      <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Product
                       </Button>
@@ -693,6 +693,101 @@ export default function VendorDashboard() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* KTU Student Business Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.9 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg text-ktu-deep-blue">
+                <Plus className="w-5 h-5 mr-2 text-ktu-orange" />
+                Business Growth
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link to="/vendor/products">
+                <Button className="w-full bg-ktu-orange hover:bg-ktu-orange-light text-white justify-start">
+                  <Package className="w-4 h-4 mr-2" />
+                  Add New Product
+                </Button>
+              </Link>
+              <Link to="/mentorship">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <Users className="w-4 h-4 mr-2" />
+                  Find Mentors
+                </Button>
+              </Link>
+              <Link to="/resources">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Business Resources
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg text-ktu-deep-blue">
+                <MessageSquare className="w-5 h-5 mr-2 text-ktu-orange" />
+                Connect & Learn
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link to="/community">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Community Forum
+                </Button>
+              </Link>
+              <Link to="/businesses">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <Package className="w-4 h-4 mr-2" />
+                  Other Student Businesses
+                </Button>
+              </Link>
+              <Link to="/vendor/settings">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Business Settings
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-lg text-ktu-deep-blue">
+                <BarChart3 className="w-5 h-5 mr-2 text-ktu-orange" />
+                Performance & Sales
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Link to="/vendor/analytics">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  View Analytics
+                </Button>
+              </Link>
+              <Link to="/vendor/orders">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <ShoppingBag className="w-4 h-4 mr-2" />
+                  Manage Orders
+                </Button>
+              </Link>
+              <Link to="/cart-dashboard">
+                <Button variant="outline" className="w-full justify-start text-ktu-deep-blue hover:text-ktu-orange">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Sales Dashboard
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>
