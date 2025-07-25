@@ -2006,30 +2006,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activeBusinesses = vendors.filter(v => v.is_approved);
       const completedOrders = allOrders.filter(o => o.status === 'completed');
       
-      // Get category breakdown with real counts and category details
-      const categoryMap = new Map();
-      activeBusinesses.forEach((vendor: any) => {
-        const category = vendor.business_category || 'Other';
+      // Get category breakdown with real counts
+      const categoryStats = activeBusinesses.reduce((acc: any, vendor: any) => {
+        const category = vendor.business_category || 'services';
         const normalizedCategory = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
-        
-        if (!categoryMap.has(normalizedCategory)) {
-          categoryMap.set(normalizedCategory, {
-            name: category,
-            normalizedName: normalizedCategory,
-            count: 0
-          });
-        }
-        categoryMap.get(normalizedCategory).count += 1;
-      });
-
-      // Convert to array and sort by count
-      const categoriesArray = Array.from(categoryMap.values()).sort((a, b) => b.count - a.count);
-      
-      // Create breakdown object for backward compatibility
-      const categoryBreakdown = {};
-      categoriesArray.forEach(cat => {
-        categoryBreakdown[cat.normalizedName] = cat.count;
-      });
+        acc[normalizedCategory] = (acc[normalizedCategory] || 0) + 1;
+        return acc;
+      }, {});
 
       const stats = {
         activeBusinesses: activeBusinesses.length,
@@ -2037,9 +2020,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalProducts: allProducts.length,
         completedOrders: completedOrders.length,
         activeMentors: allMentors.filter(m => m.status === 'active').length,
-        successStories: completedOrders.length,
-        categoryBreakdown: categoryBreakdown,
-        categories: categoriesArray, // Real categories with names and counts
+        successStories: completedOrders.length, // Using completed orders as success metric
+        categoryBreakdown: categoryStats,
         pendingApprovals: vendors.filter(v => !v.is_approved).length
       };
 

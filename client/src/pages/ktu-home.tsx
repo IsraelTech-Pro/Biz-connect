@@ -186,34 +186,39 @@ export default function KTUHome() {
     }
   ];
 
-  // Category background images mapping
-  const categoryImages = {
-    'tech': 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=200&fit=crop',
-    'fashion': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=200&fit=crop',
-    'food': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=200&fit=crop',
-    'service': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop',
-    'art': 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=300&h=200&fit=crop',
-    'digital': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop',
-    'education': 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=300&h=200&fit=crop',
-    'health': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=200&fit=crop',
-    'default': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop'
-  };
-
-  // Get real categories from database with appropriate images
-  const categories = (platformStats?.categories || []).map((category: any) => {
-    // Match category name to appropriate image
-    const categoryKey = Object.keys(categoryImages).find(key => 
-      category.name.toLowerCase().includes(key) || 
-      category.normalizedName.includes(key)
-    ) || 'default';
-    
-    return {
-      name: category.name,
-      normalizedName: category.normalizedName,
-      count: category.count,
-      bgImage: categoryImages[categoryKey]
-    };
-  });
+  // Categories with real counts from database
+  const categories = [
+    { 
+      name: "Tech & Innovation", 
+      bgImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['tech-and-innovation'] || 0
+    },
+    { 
+      name: "Fashion & Design", 
+      bgImage: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['fashion-and-design'] || 0
+    },
+    { 
+      name: "Food & Catering", 
+      bgImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['food-and-catering'] || 0
+    },
+    { 
+      name: "Services", 
+      bgImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['services'] || 0
+    },
+    { 
+      name: "Arts & Crafts", 
+      bgImage: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['arts-and-crafts'] || 0
+    },
+    { 
+      name: "Digital Marketing", 
+      bgImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop",
+      count: platformStats?.categoryBreakdown?.['digital-marketing'] || 0
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-ktu-grey">
@@ -379,14 +384,14 @@ export default function KTUHome() {
       <section className="container mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold text-ktu-deep-blue mb-6">Explore Categories</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {categories.length > 0 ? categories.map((category, index) => (
+          {categories.map((category, index) => (
             <motion.div
               key={category.name}
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Link href={`/businesses?category=${category.normalizedName}`}>
+              <Link href={`/businesses?category=${category.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
                 <Card className="relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform">
                   <div className="relative h-32">
                     <img 
@@ -403,11 +408,7 @@ export default function KTUHome() {
                 </Card>
               </Link>
             </motion.div>
-          )) : (
-            <div className="col-span-full text-center py-8">
-              <p className="text-ktu-dark-grey">Loading categories...</p>
-            </div>
-          )}
+          ))}
         </div>
       </section>
 
