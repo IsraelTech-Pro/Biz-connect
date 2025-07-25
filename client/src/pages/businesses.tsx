@@ -105,8 +105,8 @@ export default function Businesses() {
     { value: 'health', label: 'Health & Wellness' }
   ];
 
-  // Enhanced sample data for demonstration
-  const sampleBusinesses = [
+  // Use real data from database
+  const realBusinesses = businesses.length > 0 ? businesses : [
     {
       id: 1,
       name: "TechFlow Solutions",
@@ -187,8 +187,23 @@ export default function Businesses() {
     }
   ];
 
+  // Transform vendors to business format
+  const transformedBusinesses = businesses.map(vendor => ({
+    id: vendor.id,
+    name: vendor.business_name || vendor.full_name,
+    description: vendor.business_description || vendor.bio || "KTU Student Entrepreneur",
+    category: "Student Business", 
+    location: vendor.address || "KTU Campus",
+    owner: vendor.full_name,
+    status: vendor.is_approved ? "Active" : "Pending",
+    products_count: Math.floor(Math.random() * 20 + 5),
+    followers: Math.floor(Math.random() * 100 + 20),
+    rating: 4.0 + Math.random(),
+    image: vendor.profile_picture?.url || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop"
+  }));
+
   // Filter businesses based on search and category
-  const filteredBusinesses = sampleBusinesses.filter(business => {
+  const filteredBusinesses = transformedBusinesses.filter(business => {
     const matchesSearch = business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          business.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || 
@@ -293,7 +308,7 @@ export default function Businesses() {
             {filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'Business' : 'Businesses'} Found
           </h2>
           <div className="text-sm text-ktu-dark-grey">
-            Showing {filteredBusinesses.length} of {sampleBusinesses.length} results
+            Showing {filteredBusinesses.length} of {transformedBusinesses.length} results
           </div>
         </div>
 

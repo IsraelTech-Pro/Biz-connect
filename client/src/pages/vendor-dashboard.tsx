@@ -155,22 +155,22 @@ export default function VendorDashboard() {
 
   if (transactionsLoading || payoutsLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-ktu-grey flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ktu-orange"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-ktu-grey">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm border-b border-ktu-light-blue">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Vendor Dashboard</h1>
-                <p className="text-gray-600">Welcome back, {user?.business_name || user?.full_name}</p>
+                <h1 className="text-2xl font-bold text-ktu-deep-blue">KTU Student Vendor Dashboard</h1>
+                <p className="text-ktu-dark-grey">Welcome back, {user?.business_name || user?.full_name}</p>
               </div>
               <div className="flex items-center space-x-4">
                 <Button
@@ -181,9 +181,9 @@ export default function VendorDashboard() {
                   <RefreshCw className="w-4 h-4" />
                   <span>Sync Data</span>
                 </Button>
-                <Badge variant="outline" className="text-orange-600 border-orange-600">
+                <Badge variant="outline" className="text-ktu-orange border-ktu-orange">
                   <Package className="w-4 h-4 mr-1" />
-                  Vendor Account
+                  KTU Student Vendor
                 </Badge>
               </div>
             </div>

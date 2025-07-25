@@ -133,8 +133,22 @@ export default function ProductsListing() {
     { value: '200+', label: '₵200+' }
   ];
 
-  // Sample products data for demonstration
-  const sampleProducts = [
+  // Transform products data from database
+  const transformedProducts = products.map(product => ({
+    id: product.id,
+    name: product.title,
+    description: product.description,
+    price: parseFloat(product.price).toFixed(2),
+    business: product.brand || "KTU Vendor",
+    category: product.category,
+    image: product.image_url || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=250&fit=crop",
+    rating: parseFloat(product.rating_average || "4.5"),
+    reviews: product.rating_count || 10,
+    stock: product.stock_quantity
+  }));
+
+  // Use real data from database or fallback to sample
+  const sampleProducts = transformedProducts.length > 0 ? transformedProducts : [
     {
       id: 1,
       name: "Custom KTU T-Shirt",
