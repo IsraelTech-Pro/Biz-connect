@@ -2029,14 +2029,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allUsers = await storage.getUsers();
       const allProducts = await storage.getProducts();
       const allOrders = await storage.getOrders();
-      const allMentors = await storage.getMentors();
-      const allPrograms = await storage.getPrograms();
+      // Get real counts from database - handle empty tables gracefully
+      let allMentors = [];
+      let allPrograms = [];
+      
+      try {
+        allMentors = await storage.getMentors();
+        allPrograms = await storage.getPrograms();
+      } catch (error) {
+        console.log('Mentors/Programs tables empty or not accessible');
+      }
       
       const vendors = allUsers.filter(u => u.role === 'vendor');
       const activeBusinesses = vendors.filter(v => v.is_approved);
       const completedOrders = allOrders.filter(o => o.status === 'completed');
       
-      // Get category breakdown with real counts
+      // Get category breakdown with real counts from database
       const categoryStats = activeBusinesses.reduce((acc: any, vendor: any) => {
         const category = vendor.business_category || 'services';
         const normalizedCategory = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
@@ -2049,8 +2057,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         studentEntrepreneurs: vendors.length,
         totalProducts: allProducts.length,
         completedOrders: completedOrders.length,
-        activeMentors: allMentors.filter(m => m.status === 'active').length,
-        successStories: completedOrders.length, // Using completed orders as success metric
+        activeMentors: Array.isArray(allMentors) ? allMentors.filter(m => m.status === 'active').length : 0,
+        successStories: completedOrders.length,
         categoryBreakdown: categoryStats,
         pendingApprovals: vendors.filter(v => !v.is_approved).length
       };
