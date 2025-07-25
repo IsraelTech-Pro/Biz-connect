@@ -381,7 +381,7 @@ export default function KTUHome() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Link href={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}>
+              <Link href={`/businesses?category=${category.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
                 <Card className="relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform">
                   <div className="relative h-32">
                     <img 

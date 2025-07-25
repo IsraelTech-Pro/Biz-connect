@@ -87,22 +87,31 @@ export default function Businesses() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // Get category from URL parameters
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryParam = urlParams.get('category');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, []);
+
   // Fetch businesses (vendors)
   const { data: businesses = [], isLoading } = useQuery({
     queryKey: ['/api/vendors'],
   }) as { data: any[], isLoading: boolean };
 
-  // Sample categories based on KTU student business types
+  // Categories matching homepage sections
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'tech', label: 'Tech & Innovation' },
-    { value: 'fashion', label: 'Fashion & Design' },
-    { value: 'food', label: 'Food & Catering' },
+    { value: 'tech-and-innovation', label: 'Tech & Innovation' },
+    { value: 'fashion-and-design', label: 'Fashion & Design' },
+    { value: 'food-and-catering', label: 'Food & Catering' },
     { value: 'services', label: 'Services' },
-    { value: 'arts', label: 'Arts & Crafts' },
-    { value: 'marketing', label: 'Digital Marketing' },
-    { value: 'education', label: 'Education & Tutoring' },
-    { value: 'health', label: 'Health & Wellness' }
+    { value: 'arts-and-crafts', label: 'Arts & Crafts' },
+    { value: 'digital-marketing', label: 'Digital Marketing' },
+    { value: 'education-and-tutoring', label: 'Education & Tutoring' },
+    { value: 'health-and-wellness', label: 'Health & Wellness' }
   ];
 
   // Use real data from database
@@ -187,27 +196,36 @@ export default function Businesses() {
     }
   ];
 
-  // Transform vendors to business format
+  // Transform vendors to business format with proper categories
   const transformedBusinesses = businesses.map((vendor: any) => ({
     id: vendor.id,
     name: vendor.business_name || vendor.full_name,
     description: vendor.business_description || vendor.bio || "KTU Student Entrepreneur",
-    category: "Student Business", 
+    category: vendor.business_category || "services", // Use database category or default to services
     location: vendor.address || "KTU Campus",
     owner: vendor.full_name,
     status: vendor.is_approved ? "Active" : "Pending",
     products_count: Math.floor(Math.random() * 20 + 5),
     followers: Math.floor(Math.random() * 100 + 20),
     rating: 4.0 + Math.random(),
-    image: vendor.profile_picture?.url || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop"
+    image: vendor.business_logo?.[0]?.url || vendor.profile_image?.[0]?.url || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop"
   }));
 
   // Filter businesses based on search and category
   const filteredBusinesses = transformedBusinesses.filter((business: any) => {
     const matchesSearch = business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          business.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Improve category matching - normalize both sides for comparison
+    const normalizeCategory = (cat: string) => cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+    const businessCategoryNormalized = normalizeCategory(business.category);
+    const selectedCategoryNormalized = normalizeCategory(selectedCategory);
+    
     const matchesCategory = selectedCategory === 'all' || 
-                          business.category.toLowerCase().includes(selectedCategory);
+                          businessCategoryNormalized === selectedCategoryNormalized ||
+                          businessCategoryNormalized.includes(selectedCategoryNormalized) ||
+                          selectedCategoryNormalized.includes(businessCategoryNormalized);
+    
     return matchesSearch && matchesCategory;
   });
 
