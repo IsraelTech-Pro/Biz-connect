@@ -1993,5 +1993,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API endpoints
+  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const allProducts = await storage.getProducts();
+      const allOrders = await storage.getOrders();
+      
+      const vendors = allUsers.filter(u => u.role === 'vendor');
+      const totalRevenue = allOrders
+        .filter(o => o.status === 'completed')
+        .reduce((sum, o) => sum + parseFloat(o.total_amount || '0'), 0);
+      
+      const pendingApprovals = vendors.filter(v => v.status === 'pending').length;
+      
+      const stats = {
+        totalUsers: allUsers.length,
+        totalVendors: vendors.length,
+        totalProducts: allProducts.length,
+        totalOrders: allOrders.length,
+        totalRevenue: totalRevenue,
+        pendingApprovals: pendingApprovals,
+        activePrograms: 5, // Mock data - would come from programs table
+        totalMentors: 8 // Mock data - would come from mentors table
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      res.status(500).json({ message: 'Failed to fetch admin stats' });
+    }
+  });
+
+  app.get('/api/admin/businesses', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const vendors = allUsers.filter(u => u.role === 'vendor');
+      
+      const businessesData = await Promise.all(
+        vendors.map(async (vendor) => {
+          const products = await storage.getProductsByVendor(vendor.id);
+          const orders = await storage.getOrdersByVendor(vendor.id);
+          const totalSales = orders
+            .filter(o => o.status === 'completed')
+            .reduce((sum, o) => sum + parseFloat(o.total_amount || '0'), 0);
+          
+          return {
+            id: vendor.id,
+            business_name: vendor.business_name || vendor.full_name,
+            full_name: vendor.full_name,
+            email: vendor.email,
+            status: vendor.status || 'approved',
+            created_at: vendor.created_at,
+            total_products: products.length,
+            total_sales: totalSales
+          };
+        })
+      );
+      
+      res.json(businessesData);
+    } catch (error) {
+      console.error('Error fetching businesses:', error);
+      res.status(500).json({ message: 'Failed to fetch businesses' });
+    }
+  });
+
+  app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const usersData = allUsers.map(user => ({
+        id: user.id,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role,
+        status: user.status || 'active',
+        created_at: user.created_at
+      }));
+      
+      res.json(usersData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+
+  // Admin endpoint to approve/reject vendors
+  app.patch('/api/admin/vendors/:vendorId/status', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { vendorId } = req.params;
+      const { status } = req.body;
+      
+      if (!['approved', 'rejected', 'pending'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status' });
+      }
+      
+      const updatedUser = await storage.updateUser(vendorId, { status });
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating vendor status:', error);
+      res.status(500).json({ message: 'Failed to update vendor status' });
+    }
+  });
+
+  // Admin endpoint to get all products
+  app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const allProducts = await storage.getProducts();
+      res.json(allProducts);
+    } catch (error) {
+      console.error('Error fetching all products:', error);
+      res.status(500).json({ message: 'Failed to fetch products' });
+    }
+  });
+
+  // Admin endpoint to manage product visibility
+  app.patch('/api/admin/products/:productId/status', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const { status } = req.body;
+      
+      const updatedProduct = await storage.updateProduct(productId, { status });
+      res.json(updatedProduct);
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      res.status(500).json({ message: 'Failed to update product status' });
+    }
+  });
+
+  // Admin endpoints for mentors, programs, and resources
+  app.post('/api/admin/mentors', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      // Mock implementation - would save to mentors table
+      const mentorData = req.body;
+      console.log('Creating mentor:', mentorData);
+      
+      // In a real implementation, you would save to a mentors table
+      const mentor = {
+        id: Date.now().toString(),
+        ...mentorData,
+        created_at: new Date().toISOString(),
+        status: 'active'
+      };
+      
+      res.json(mentor);
+    } catch (error) {
+      console.error('Error creating mentor:', error);
+      res.status(500).json({ message: 'Failed to create mentor' });
+    }
+  });
+
+  app.post('/api/admin/programs', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      // Mock implementation - would save to programs table
+      const programData = req.body;
+      console.log('Creating program:', programData);
+      
+      // In a real implementation, you would save to a programs table
+      const program = {
+        id: Date.now().toString(),
+        ...programData,
+        created_at: new Date().toISOString(),
+        participants_count: 0
+      };
+      
+      res.json(program);
+    } catch (error) {
+      console.error('Error creating program:', error);
+      res.status(500).json({ message: 'Failed to create program' });
+    }
+  });
+
+  app.post('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+      // Mock implementation - would save to resources table
+      const resourceData = req.body;
+      console.log('Creating resource:', resourceData);
+      
+      // In a real implementation, you would save to a resources table
+      const resource = {
+        id: Date.now().toString(),
+        ...resourceData,
+        created_at: new Date().toISOString(),
+        views: 0
+      };
+      
+      res.json(resource);
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      res.status(500).json({ message: 'Failed to create resource' });
+    }
+  });
+
   return httpServer;
 }
