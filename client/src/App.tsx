@@ -12,7 +12,10 @@ import { PaymentCallbackHandler } from "@/components/payment-callback-handler";
 import { PaymentSuccessNotice } from "@/components/payment-success-notice";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import KTUHome from "@/pages/ktu-home";
 import Products from "@/pages/products/index";
+import Businesses from "@/pages/businesses";
+import ProductsListing from "@/pages/products-listing";
 import ProductDetail from "@/pages/product-detail";
 import Vendors from "@/pages/vendors";
 import VendorStore from "@/pages/vendor-store";
@@ -56,12 +59,19 @@ import MobileMoney from './pages/policies/mobile-money';
 // Contact page
 import ContactVendor from './pages/contact-vendor';
 import CartDashboard from './pages/cart-dashboard';
+import KTUBusinesses from "./pages/businesses";
+import KTUProductsListing from "./pages/products-listing";
+import Mentorship from "./pages/mentorship";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={KTUHome} />
+      <Route path="/old-home" component={Home} />
+      <Route path="/businesses" component={KTUBusinesses} />
+      <Route path="/mentorship" component={Mentorship} />
       <Route path="/products" component={Products} />
+      <Route path="/products-listing" component={KTUProductsListing} />
       <Route path="/products/:id" component={ProductDetail} />
       <Route path="/vendors" component={Vendors} />
       <Route path="/cart" component={Cart} />

@@ -1,8 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* KTU BizConnect Brand Colors */
+:root {
+  --ktu-deep-blue: #003366;
+  --ktu-orange: #f47c21;
+  --ktu-white: #ffffff;
+  --ktu-grey: #f8f9fa;
+  --ktu-dark-grey: #6c757d;
+  --ktu-light-blue: #e6f3ff;
+  --ktu-gradient: linear-gradient(135deg, #003366 0%, #0066cc 100%);
+  --ktu-orange-gradient: linear-gradient(135deg, #f47c21 0%, #ff9500 100%);
+}
+
+/* Custom font configuration */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  color: var(--ktu-deep-blue);
+  background-color: var(--ktu-grey);
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -35,14 +52,29 @@
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(244, 124, 33, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(244, 124, 33, 0.6); }
 }
 
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+@keyframes cardLift {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-8px) scale(1.02); }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes revealSection {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .animate-fade-in {
@@ -70,30 +102,49 @@
 }
 
 .animate-gradient {
-  background: linear-gradient(-45deg, #f97316, #ea580c, #dc2626, #b91c1c);
+  background: var(--ktu-gradient);
   background-size: 400% 400%;
   animation: gradientShift 4s ease infinite;
 }
 
-.jumia-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+.animate-card-lift:hover {
+  animation: cardLift 0.3s ease-out forwards;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.animate-reveal {
+  animation: revealSection 0.8s ease-out;
+}
+
+/* KTU BizConnect Card Styles */
+.ktu-card {
+  background: var(--ktu-white);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 51, 102, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  border: 1px solid rgba(0, 51, 102, 0.05);
 }
 
-.jumia-card:hover {
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+.ktu-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 51, 102, 0.15);
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(244, 124, 33, 0.2);
 }
 
-.jumia-hero-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.ktu-hero-gradient {
+  background: var(--ktu-gradient);
 }
 
-.jumia-clearance-gradient {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.ktu-orange-gradient {
+  background: var(--ktu-orange-gradient);
+}
+
+.ktu-section-gradient {
+  background: linear-gradient(135deg, var(--ktu-light-blue) 0%, var(--ktu-white) 100%);
 }
 
 /* Jumia-style 6-column product grid - exactly like the screenshot */
@@ -1305,5 +1356,45 @@
   background-color: #c2410c !important;
   border-color: #c2410c !important;
   color: white !important;
+}
+
+/* KTU BizConnect Custom Classes */
+.ktu-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 51, 102, 0.08);
+  border: 1px solid #e6f3ff;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ktu-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 51, 102, 0.15);
+  border-color: #f47c21;
+}
+
+.animate-card-lift {
+  transition: all 0.3s ease;
+}
+
+.animate-card-lift:hover {
+  animation: cardLift 0.3s ease forwards;
+}
+
+.ktu-hero-gradient {
+  background: linear-gradient(135deg, #003366 0%, #0066cc 100%);
+}
+
+.ktu-orange-gradient {
+  background: linear-gradient(135deg, #f47c21 0%, #ff9500 100%);
+}
+
+.ktu-section-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+@keyframes cardLift {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-8px) scale(1.02); }
 }
 

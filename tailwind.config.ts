@@ -61,6 +61,15 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        ktu: {
+          'deep-blue': '#003366',
+          'blue': '#0066cc',
+          'orange': '#f47c21',
+          'orange-light': '#ff9500',
+          'grey': '#f8f9fa',
+          'dark-grey': '#6c757d',
+          'light-blue': '#e6f3ff',
+        },
       },
       keyframes: {
         "accordion-down": {

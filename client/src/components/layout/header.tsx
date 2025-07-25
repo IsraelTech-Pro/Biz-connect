@@ -8,14 +8,14 @@ import { useAuth } from '@/contexts/auth-context';
 import { useCart } from '@/contexts/cart-context';
 
 const categories = [
-  { name: 'Electronics', icon: '📱', color: 'bg-blue-500' },
-  { name: 'Fashion', icon: '👕', color: 'bg-pink-500' },
-  { name: 'Home & Kitchen', icon: '🏠', color: 'bg-green-500' },
-  { name: 'Sports', icon: '⚽', color: 'btn-orange-primary' },
-  { name: 'Beauty', icon: '💄', color: 'bg-purple-500' },
-  { name: 'Books', icon: '📚', color: 'bg-indigo-500' },
-  { name: 'Gaming', icon: '🎮', color: 'bg-red-500' },
-  { name: 'Groceries', icon: '🛒', color: 'bg-yellow-500' },
+  { name: 'Tech & Innovation', icon: '💻', color: 'bg-ktu-deep-blue' },
+  { name: 'Fashion & Design', icon: '👔', color: 'bg-ktu-orange' },
+  { name: 'Food & Catering', icon: '🍽️', color: 'bg-green-500' },
+  { name: 'Education & Tutoring', icon: '📚', color: 'bg-indigo-500' },
+  { name: 'Arts & Crafts', icon: '🎨', color: 'bg-purple-500' },
+  { name: 'Digital Marketing', icon: '📱', color: 'bg-blue-500' },
+  { name: 'Services', icon: '🔧', color: 'bg-gray-500' },
+  { name: 'Health & Wellness', icon: '💊', color: 'bg-teal-500' },
 ];
 
 export const Header = () => {
@@ -47,18 +47,18 @@ export const Header = () => {
   return (
     <>
       {/* Top Bar */}
-      <div className="bg-purple-600 text-white py-2">
+      <div className="bg-ktu-deep-blue text-white py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center text-sm">
             <div className="flex items-center space-x-6">
-              <span className="font-bold">CLEARANCE SALE</span>
-              <span className="hidden md:inline">VendorHub</span>
-              <span className="hidden md:inline">☎️ HOME</span>
-              <span className="hidden md:inline">🏪 ELECTRONICS</span>
+              <span className="font-bold">KTU BIZCONNECT</span>
+              <span className="hidden md:inline">Student Entrepreneurs</span>
+              <span className="hidden md:inline">🏫 Campus Hub</span>
+              <span className="hidden md:inline">📚 Resources</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="font-bold">Call to order</span>
-              <span className="text-blue-300 font-bold">0302 240 642</span>
+              <span className="font-bold">Need Help?</span>
+              <span className="text-ktu-orange font-bold">Contact Support</span>
             </div>
           </div>
         </div>
@@ -83,10 +83,10 @@ export const Header = () => {
                 </div>
               </Button>
               <Link to="/" className="flex items-center space-x-2 group">
-                <div className="btn-orange-primary p-1.5 lg:p-2 rounded">
+                <div className="bg-ktu-orange p-1.5 lg:p-2 rounded">
                   <Store className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <span className="text-xl lg:text-2xl font-bold text-orange-500">VendorHub</span>
+                <span className="text-xl lg:text-2xl font-bold text-ktu-deep-blue">KTU <span className="text-ktu-orange">BizConnect</span></span>
               </Link>
             </div>
 
