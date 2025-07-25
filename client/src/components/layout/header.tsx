@@ -51,14 +51,24 @@ export const Header = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center text-sm">
             <div className="flex items-center space-x-6">
-              <span className="font-bold">KTU BIZCONNECT</span>
-              <span className="hidden md:inline">Student Entrepreneurs</span>
-              <span className="hidden md:inline">🏫 Campus Hub</span>
-              <span className="hidden md:inline">📚 Resources</span>
+              <Link to="/" className="font-bold hover:text-ktu-orange transition-colors">
+                KTU BIZCONNECT
+              </Link>
+              <Link to="/businesses" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">
+                Student Entrepreneurs
+              </Link>
+              <Link to="/" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">
+                🏫 Campus Hub
+              </Link>
+              <Link to="/resources" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">
+                📚 Resources
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <span className="font-bold">Need Help?</span>
-              <span className="text-ktu-orange font-bold">Contact Support</span>
+              <Link to="/customer-support" className="text-ktu-orange font-bold hover:text-white transition-colors cursor-pointer">
+                Contact Support
+              </Link>
             </div>
           </div>
         </div>
@@ -192,6 +202,29 @@ export const Header = () => {
           </div>
         </div>
         
+        {/* Desktop Navigation */}
+        <nav className="bg-ktu-section-gradient border-b border-gray-200 hidden md:block">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center space-x-8 py-3">
+              <Link to="/businesses" className="text-ktu-deep-blue hover:text-ktu-orange transition-colors font-medium">
+                Student Businesses
+              </Link>
+              <Link to="/products-listing" className="text-ktu-deep-blue hover:text-ktu-orange transition-colors font-medium">
+                Products
+              </Link>
+              <Link to="/mentorship" className="text-ktu-deep-blue hover:text-ktu-orange transition-colors font-medium">
+                Mentorship
+              </Link>
+              <Link to="/resources" className="text-ktu-deep-blue hover:text-ktu-orange transition-colors font-medium">
+                Resources
+              </Link>
+              <Link to="/community" className="text-ktu-deep-blue hover:text-ktu-orange transition-colors font-medium">
+                Community
+              </Link>
+            </div>
+          </div>
+        </nav>
+
         {/* Mobile Search Bar */}
         <AnimatePresence>
           {isSearchFocused && (
