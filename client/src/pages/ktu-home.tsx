@@ -84,13 +84,28 @@ const ProductCard = ({ product }: { product: any }) => {
 export default function KTUHome() {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Fetch products and businesses
-  const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: ['/api/products'],
+  // Fetch real businesses data and randomize for homepage
+  const { data: businessesData = [], isLoading: businessesLoading } = useQuery<User[]>({
+    queryKey: ['/api/vendors'],
+    queryFn: async () => {
+      const response = await fetch('/api/vendors');
+      if (!response.ok) throw new Error('Failed to fetch businesses');
+      const data = await response.json();
+      // Randomize the businesses for homepage display
+      return data.sort(() => Math.random() - 0.5);
+    }
   });
 
-  const { data: businesses = [], isLoading: businessesLoading } = useQuery({
-    queryKey: ['/api/vendors'],
+  // Fetch real products data and randomize for homepage  
+  const { data: productsData = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+    queryFn: async () => {
+      const response = await fetch('/api/products');
+      if (!response.ok) throw new Error('Failed to fetch products');
+      const data = await response.json();
+      // Randomize the products for homepage display
+      return data.sort(() => Math.random() - 0.5);
+    }
   });
 
   // Hero slides with KTU focus
@@ -297,15 +312,26 @@ export default function KTUHome() {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          {[1,2,3,4,5,6].map((i) => (
-            <BusinessCard key={i} business={{
-              id: i,
-              name: `Student Business ${i}`,
-              description: "Innovative solutions by KTU student entrepreneurs",
-              category: "Tech",
-              image: `https://images.unsplash.com/photo-156047235435${i}?w=300&h=200&fit=crop`
-            }} />
-          ))}
+          {businessesLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-40 mb-2"></div>
+                <div className="bg-gray-200 rounded h-4 mb-1"></div>
+                <div className="bg-gray-200 rounded h-3"></div>
+              </div>
+            ))
+          ) : (
+            businessesData.slice(0, 6).map((business) => (
+              <BusinessCard key={business.id} business={{
+                id: business.id,
+                name: business.business_name || business.full_name,
+                description: business.business_description || "KTU Student Business",
+                category: business.business_category || "Student Business",
+                image: business.business_logo?.[0]?.url || business.profile_image?.[0]?.url || `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop`
+              }} />
+            ))
+          )}
         </div>
       </section>
 
@@ -321,15 +347,26 @@ export default function KTUHome() {
         </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          {[1,2,3,4,5,6].map((i) => (
-            <ProductCard key={i} product={{
-              id: i,
-              name: `Product ${i}`,
-              description: "Quality products from student entrepreneurs",
-              price: (Math.random() * 100 + 20).toFixed(2),
-              image: `https://images.unsplash.com/photo-152327533568${i}?w=300&h=200&fit=crop`
-            }} />
-          ))}
+          {productsLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 rounded-lg h-40 mb-2"></div>
+                <div className="bg-gray-200 rounded h-4 mb-1"></div>
+                <div className="bg-gray-200 rounded h-3"></div>
+              </div>
+            ))
+          ) : (
+            productsData.slice(0, 6).map((product) => (
+              <ProductCard key={product.id} product={{
+                id: product.id,
+                name: product.title,
+                description: product.description,
+                price: product.price,
+                image: product.product_images?.[0]?.url || product.image_url || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop`
+              }} />
+            ))
+          )}
         </div>
       </section>
 
