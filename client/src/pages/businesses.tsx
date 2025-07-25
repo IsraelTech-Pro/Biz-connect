@@ -19,7 +19,7 @@ const BusinessCard = ({ business, index }: { business: any; index: number }) => 
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Link href={`/businesses/${business.id}`}>
+      <Link to={`/stores/${business.id}`}>
         <Card className="ktu-card animate-card-lift h-full group cursor-pointer">
           <div className="relative overflow-hidden">
             <img 
@@ -90,7 +90,7 @@ export default function Businesses() {
   // Fetch businesses (vendors)
   const { data: businesses = [], isLoading } = useQuery({
     queryKey: ['/api/vendors'],
-  });
+  }) as { data: any[], isLoading: boolean };
 
   // Sample categories based on KTU student business types
   const categories = [
@@ -188,7 +188,7 @@ export default function Businesses() {
   ];
 
   // Transform vendors to business format
-  const transformedBusinesses = businesses.map(vendor => ({
+  const transformedBusinesses = businesses.map((vendor: any) => ({
     id: vendor.id,
     name: vendor.business_name || vendor.full_name,
     description: vendor.business_description || vendor.bio || "KTU Student Entrepreneur",
@@ -203,7 +203,7 @@ export default function Businesses() {
   }));
 
   // Filter businesses based on search and category
-  const filteredBusinesses = transformedBusinesses.filter(business => {
+  const filteredBusinesses = transformedBusinesses.filter((business: any) => {
     const matchesSearch = business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          business.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || 
@@ -333,7 +333,7 @@ export default function Businesses() {
               ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
               : 'grid-cols-1'
           }`}>
-            {filteredBusinesses.map((business, index) => (
+            {filteredBusinesses.map((business: any, index: number) => (
               <BusinessCard key={business.id} business={business} index={index} />
             ))}
           </div>
@@ -351,12 +351,12 @@ export default function Businesses() {
             Get the support, resources, and mentorship you need to succeed.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/business/register">
+            <Link to="/auth/register">
               <Button className="bg-ktu-orange hover:bg-ktu-orange-light">
                 Register Your Business
               </Button>
             </Link>
-            <Link href="/mentorship">
+            <Link to="/mentorship">
               <Button variant="outline" className="border-ktu-deep-blue text-ktu-deep-blue hover:bg-ktu-deep-blue hover:text-white">
                 Find a Mentor
               </Button>
