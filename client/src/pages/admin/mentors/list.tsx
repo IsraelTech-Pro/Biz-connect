@@ -8,8 +8,7 @@ import {
   Eye, 
   Search,
   Filter,
-  MoreHorizontal,
-  BookOpen
+  MoreHorizontal
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
