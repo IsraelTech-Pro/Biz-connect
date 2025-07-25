@@ -1,15 +1,18 @@
-import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment } from "@shared/schema";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment } from "@shared/schema";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq, and, desc, sql, like, or } from "drizzle-orm";
+import pg from "pg";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
-  console.warn("DATABASE_URL not found. Using mock storage for development.");
+  throw new Error("DATABASE_URL not found. Please configure PostgreSQL database.");
 }
 
-const sql_client = connectionString ? neon(connectionString) : null;
-const db = sql_client ? drizzle(sql_client) : null;
+const pool = new pg.Pool({
+  connectionString,
+});
+
+const db = drizzle(pool);
 
 export interface IStorage {
   // Users
@@ -136,12 +139,12 @@ export class PostgresStorage implements IStorage {
 
   async getPendingVendors(): Promise<User[]> {
     if (!db) throw new Error('Database not available');
-    return await db.select().from(users).where(and(eq(users.role, "vendor"), eq(users.vendor_approved, false)));
+    return await db.select().from(users).where(and(eq(users.role, "vendor"), eq(users.is_approved, false)));
   }
 
   async approveVendor(id: string): Promise<User> {
     if (!db) throw new Error('Database not available');
-    const result = await db.update(users).set({ vendor_approved: true }).where(eq(users.id, id)).returning();
+    const result = await db.update(users).set({ is_approved: true }).where(eq(users.id, id)).returning();
     return result[0];
   }
 
@@ -403,10 +406,10 @@ export class PostgresStorage implements IStorage {
   }> {
     if (!db) throw new Error('Database not available');
     const [salesResult, ordersResult, productsResult, payoutsResult] = await Promise.all([
-      db.select({ total: sql<number>`sum(${orders.amount})` }).from(orders).where(eq(orders.vendor_id, vendorId)),
+      db.select({ total: sql<number>`sum(${orders.total_amount})` }).from(orders).where(eq(orders.vendor_id, vendorId)),
       db.select({ count: sql<number>`count(*)` }).from(orders).where(eq(orders.vendor_id, vendorId)),
       db.select({ count: sql<number>`count(*)` }).from(products).where(eq(products.vendor_id, vendorId)),
-      db.select({ total: sql<number>`sum(${payouts.amount})` }).from(payouts).where(and(eq(payouts.vendor_id, vendorId), eq(payouts.transfer_status, "pending")))
+      db.select({ total: sql<number>`sum(${payouts.amount})` }).from(payouts).where(and(eq(payouts.vendor_id, vendorId), eq(payouts.status, "pending")))
     ]);
 
     return {
@@ -427,8 +430,8 @@ export class PostgresStorage implements IStorage {
     const [vendorsResult, ordersResult, revenueResult, payoutsResult] = await Promise.all([
       db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "vendor")),
       db.select({ count: sql<number>`count(*)` }).from(orders),
-      db.select({ total: sql<number>`sum(${orders.amount})` }).from(orders),
-      db.select({ total: sql<number>`sum(${payouts.amount})` }).from(payouts).where(eq(payouts.transfer_status, "pending"))
+      db.select({ total: sql<number>`sum(${orders.total_amount})` }).from(orders),
+      db.select({ total: sql<number>`sum(${payouts.amount})` }).from(payouts).where(eq(payouts.status, "pending"))
     ]);
 
     const settings = await this.getPlatformSettings();
@@ -499,22 +502,6 @@ export class PostgresStorage implements IStorage {
   }
 }
 
-import { MockStorage } from "./mock-storage";
-import { SupabaseStorage } from "./supabase-storage";
+console.log('Storage initialization: Using PostgreSQL with DATABASE_URL');
 
-// Check for Supabase credentials first, then PostgreSQL, then fallback to mock
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-console.log('Storage initialization:', {
-  hasSupabaseUrl: !!supabaseUrl,
-  hasSupabaseAnonKey: !!supabaseAnonKey,
-  hasDatabase: !!db,
-  usingStorage: supabaseUrl && supabaseAnonKey ? 'Supabase' : db ? 'PostgreSQL' : 'Mock'
-});
-
-export const storage = supabaseUrl && supabaseAnonKey 
-  ? new SupabaseStorage() 
-  : db 
-    ? new PostgresStorage() 
-    : new MockStorage();
+export const storage = new PostgresStorage();
