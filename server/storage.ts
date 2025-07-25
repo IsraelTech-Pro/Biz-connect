@@ -1,4 +1,4 @@
-import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource } from "@shared/schema";
+import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, adminUsers, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource, type AdminUser, type InsertAdminUser } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, and, desc, sql, like, or } from "drizzle-orm";
 import pg from "pg";
@@ -127,6 +127,13 @@ export interface IStorage {
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: string, resource: Partial<InsertResource>): Promise<Resource>;
   deleteResource(id: string): Promise<void>;
+
+  // Admin authentication methods
+  getAdminUsers(): Promise<AdminUser[]>;
+  createAdminUser(data: InsertAdminUser): Promise<AdminUser>;
+  getAdminUserByUsername(username: string): Promise<AdminUser | null>;
+  getAdminUserById(id: string): Promise<AdminUser | null>;
+  updateAdminUser(id: string, data: Partial<InsertAdminUser>): Promise<AdminUser | null>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -609,6 +616,37 @@ export class PostgresStorage implements IStorage {
   async deleteResource(id: string): Promise<void> {
     if (!db) throw new Error('Database not available');
     await db.delete(resources).where(eq(resources.id, id));
+  }
+
+  // Admin authentication methods
+  async getAdminUsers(): Promise<AdminUser[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(adminUsers).orderBy(desc(adminUsers.created_at));
+    return result;
+  }
+
+  async createAdminUser(data: InsertAdminUser): Promise<AdminUser> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(adminUsers).values(data).returning();
+    return result[0];
+  }
+
+  async getAdminUserByUsername(username: string): Promise<AdminUser | null> {
+    if (!db) throw new Error('Database not available');      
+    const result = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
+    return result[0] || null;
+  }
+
+  async getAdminUserById(id: string): Promise<AdminUser | null> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+    return result[0] || null;
+  }
+
+  async updateAdminUser(id: string, data: Partial<InsertAdminUser>): Promise<AdminUser | null> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(adminUsers).set(data).where(eq(adminUsers.id, id)).returning();
+    return result[0] || null;
   }
 }
 

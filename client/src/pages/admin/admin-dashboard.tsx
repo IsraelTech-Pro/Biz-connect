@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 interface AdminStats {
   totalUsers: number;
@@ -65,7 +65,31 @@ interface User {
 export default function AdminDashboard() {
   const { user, token } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Check for admin authentication on component mount
+  useEffect(() => {
+    const adminToken = localStorage.getItem('admin_token');
+    const adminUser = localStorage.getItem('admin_user');
+    
+    if (!adminToken || !adminUser) {
+      setLocation('/admin/login');
+      return;
+    }
+    
+    // Verify token is still valid
+    try {
+      const userData = JSON.parse(adminUser);
+      if (!userData.username) {
+        throw new Error('Invalid admin session');
+      }
+    } catch (error) {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      setLocation('/admin/login');
+    }
+  }, [setLocation]);
 
   const handleBusinessApproval = async (businessId: string, approved: boolean) => {
     try {

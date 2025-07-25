@@ -2307,5 +2307,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin authentication routes
+  app.post('/api/admin/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ 
+          error: 'Username and password are required' 
+        });
+      }
+
+      // Find admin user by username
+      const adminUser = await storage.getAdminUserByUsername(username);
+      
+      if (!adminUser) {
+        return res.status(401).json({ 
+          error: 'Invalid credentials' 
+        });
+      }
+
+      // Check if admin is active
+      if (!adminUser.is_active) {
+        return res.status(401).json({ 
+          error: 'Admin account is inactive' 
+        });
+      }
+
+      // Compare plain text password (as requested)
+      if (adminUser.password !== password) {
+        return res.status(401).json({ 
+          error: 'Invalid credentials' 
+        });
+      }
+
+      // Generate JWT token for admin session
+      const token = jwt.sign(
+        { 
+          id: adminUser.id, 
+          username: adminUser.username,
+          type: 'admin'
+        }, 
+        JWT_SECRET, 
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: adminUser.id,
+          username: adminUser.username,
+          full_name: adminUser.full_name,
+          email: adminUser.email,
+          is_active: adminUser.is_active
+        }
+      });
+    } catch (error) {
+      console.error('Admin login error:', error);
+      res.status(500).json({ 
+        error: 'Internal server error' 
+      });
+    }
+  });
+
+  // Middleware to verify admin token
+  const authenticateAdminToken = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'Admin access token required' });
+    }
+
+    jwt.verify(token, JWT_SECRET, async (err: any, decoded: any) => {
+      if (err) return res.status(403).json({ message: 'Invalid admin token' });
+      
+      if (decoded.type !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+      
+      try {
+        const adminUser = await storage.getAdminUserById(decoded.id);
+        if (!adminUser || !adminUser.is_active) {
+          return res.status(403).json({ message: 'Admin user not found or inactive' });
+        }
+        req.adminUser = adminUser;
+        next();
+      } catch (error) {
+        console.error('Admin authentication error:', error);
+        return res.status(500).json({ message: 'Admin authentication error' });
+      }
+    });
+  };
+
+  // Admin profile route
+  app.get('/api/admin/profile', authenticateAdminToken, async (req, res) => {
+    try {
+      const adminUser = req.adminUser;
+      res.json({
+        id: adminUser.id,
+        username: adminUser.username,
+        full_name: adminUser.full_name,
+        email: adminUser.email,
+        is_active: adminUser.is_active,
+        created_at: adminUser.created_at
+      });
+    } catch (error) {
+      console.error('Error fetching admin profile:', error);
+      res.status(500).json({ message: 'Failed to fetch admin profile' });
+    }
+  });
+
+  // Admin logout route
+  app.post('/api/admin/logout', authenticateAdminToken, async (req, res) => {
+    try {
+      // Since we're using stateless JWT, logout is handled on client side
+      res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Admin logout error:', error);
+      res.status(500).json({ message: 'Logout error' });
+    }
+  });
+
   return httpServer;
 }

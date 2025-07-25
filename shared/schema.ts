@@ -317,3 +317,25 @@ export type Program = typeof programs.$inferSelect;
 export type InsertProgram = z.infer<typeof insertProgramSchema>;
 export type Resource = typeof resources.$inferSelect;
 export type InsertResource = z.infer<typeof insertResourceSchema>;
+
+// Admin users table for admin authentication
+export const adminUsers = pgTable("admin_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(), // Plain text as requested
+  full_name: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
+  is_active: boolean("is_active").default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Insert schema for admin users
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
