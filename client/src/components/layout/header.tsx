@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Search, ShoppingCart, User, Menu, X, Store, Bell, MapPin, Phone } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, Store, Bell, MapPin, Phone, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -181,6 +181,21 @@ export const Header = () => {
                 </div>
               </div>
 
+              {/* Dashboard */}
+              {user && (
+                <Link to={user.role === 'vendor' ? '/vendor/dashboard' : user.role === 'admin' ? '/admin/dashboard' : '/dashboard/buyer'}>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-1 hover:bg-orange-50 px-2 py-2">
+                    <BarChart3 className="h-4 w-4" />
+                    <div className="text-left hidden lg:block">
+                      <div className="text-xs text-gray-500">Dashboard</div>
+                      <div className="text-sm font-medium">
+                        {user.role === 'vendor' ? 'Business' : user.role === 'admin' ? 'Admin' : 'Buyer'}
+                      </div>
+                    </div>
+                  </Button>
+                </Link>
+              )}
+
               {/* Cart */}
               <Link to="/cart">
                 <Button variant="ghost" size="sm" className="flex items-center space-x-1 hover:bg-orange-50 px-2 py-2 relative">
@@ -269,6 +284,18 @@ export const Header = () => {
             className="md:hidden bg-white border-t border-gray-200"
           >
             <div className="px-4 py-4 space-y-3">
+              {user && (
+                <Link
+                  to={user.role === 'vendor' ? '/vendor/dashboard' : user.role === 'admin' ? '/admin/dashboard' : '/dashboard/buyer'}
+                  className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span className="text-lg">📊</span>
+                  <span className="text-sm font-medium">
+                    {user.role === 'vendor' ? 'Business Dashboard' : user.role === 'admin' ? 'Admin Dashboard' : 'Buyer Dashboard'}
+                  </span>
+                </Link>
+              )}
               <Link
                 to="/businesses"
                 className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
