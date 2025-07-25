@@ -35,7 +35,7 @@ import VendorProductsGrid from "@/pages/vendor/products-grid";
 import VendorOrders from "@/pages/vendor/orders";
 import VendorAnalytics from "@/pages/vendor/analytics";
 import VendorSettings from "@/pages/vendor/settings";
-import AdminDashboard from "@/pages/admin/dashboard";
+// import AdminDashboard from "@/pages/admin/dashboard"; // Using KTU admin dashboard instead
 import AdminVendors from "@/pages/admin/vendors";
 import AdminSettings from "@/pages/admin/settings";
 
@@ -62,6 +62,10 @@ import CartDashboard from './pages/cart-dashboard';
 import KTUBusinesses from "./pages/businesses";
 import KTUProductsListing from "./pages/products-listing";
 import Mentorship from "./pages/mentorship";
+import KTUAdminDashboard from "./pages/admin-dashboard";
+import BusinessResources from "./pages/business-resources";
+import CommunityForum from "./pages/community-forum";
+import MentorshipHub from "./pages/mentorship-hub";
 
 function Router() {
   return (
@@ -69,7 +73,10 @@ function Router() {
       <Route path="/" component={KTUHome} />
       <Route path="/old-home" component={Home} />
       <Route path="/businesses" component={KTUBusinesses} />
-      <Route path="/mentorship" component={Mentorship} />
+      <Route path="/mentorship" component={MentorshipHub} />
+      <Route path="/resources" component={BusinessResources} />
+      <Route path="/community" component={CommunityForum} />
+      <Route path="/admin" component={KTUAdminDashboard} />
       <Route path="/products" component={Products} />
       <Route path="/products-listing" component={KTUProductsListing} />
       <Route path="/products/:id" component={ProductDetail} />
@@ -90,7 +97,7 @@ function Router() {
       <Route path="/vendor/orders" component={VendorOrders} />
       <Route path="/vendor/analytics" component={VendorAnalytics} />
       <Route path="/vendor/settings" component={VendorSettings} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/dashboard" component={KTUAdminDashboard} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/stores/:id" component={VendorStore} />
