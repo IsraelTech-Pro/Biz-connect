@@ -224,37 +224,7 @@ export const Header = () => {
         </AnimatePresence>
       </header>
 
-      {/* Categories Navigation */}
-      <nav className="bg-white border-b border-gray-200 hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center space-x-8">
-              {categories.map((category) => (
-                <Link
-                  key={category.name}
-                  to={`/browse-products?category=${category.name.toLowerCase()}`}
-                  className="group"
-                >
-                  <div className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <span className="text-lg">{category.icon}</span>
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-orange-500">
-                      {category.name}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-            <div className="flex items-center space-x-6">
-              <Link to="/vendor-stores" className="text-sm text-orange-500 hover:text-orange-600 font-medium">
-                Vendor Stores
-              </Link>
-              <Link to="/browse-products" className="text-sm text-orange-500 hover:text-orange-600 font-medium">
-                See All →
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+
 
       {/* Mobile Menu */}
       <AnimatePresence>
@@ -266,27 +236,46 @@ export const Header = () => {
             className="md:hidden bg-white border-t border-gray-200"
           >
             <div className="px-4 py-4 space-y-3">
-              {/* Vendor Stores Link */}
               <Link
-                to="/vendor-stores"
-                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50"
+                to="/businesses"
+                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <span className="text-lg">🏪</span>
-                <span className="text-sm font-medium text-gray-700">Vendor Stores</span>
+                <span className="text-lg">🏢</span>
+                <span className="text-sm font-medium">Student Businesses</span>
               </Link>
-              
-              {categories.map((category) => (
-                <Link
-                  key={category.name}
-                  to={`/browse-products?category=${category.name.toLowerCase()}`}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="text-lg">{category.icon}</span>
-                  <span className="text-sm font-medium text-gray-700">{category.name}</span>
-                </Link>
-              ))}
+              <Link
+                to="/products-listing"
+                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="text-lg">📦</span>
+                <span className="text-sm font-medium">Products</span>
+              </Link>
+              <Link
+                to="/mentorship"
+                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="text-lg">👨‍🏫</span>
+                <span className="text-sm font-medium">Mentorship</span>
+              </Link>
+              <Link
+                to="/resources"
+                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="text-lg">📚</span>
+                <span className="text-sm font-medium">Resources</span>
+              </Link>
+              <Link
+                to="/community"
+                className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span className="text-lg">💬</span>
+                <span className="text-sm font-medium">Community</span>
+              </Link>
             </div>
           </motion.div>
         )}
