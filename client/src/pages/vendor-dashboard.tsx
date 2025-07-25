@@ -1,466 +1,438 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'wouter';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  ShoppingBag, 
+  Package,
+  Calendar,
+  Clock,
+  CheckCircle,
+  User,
+  Mail,
+  RefreshCw
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Package, 
-  ShoppingCart, 
-  TrendingUp, 
-  DollarSign, 
-  Eye, 
-  Plus,
-  Settings,
-  BarChart3,
-  Users,
-  Star,
-  Clock,
-  CheckCircle,
-  XCircle,
-  AlertCircle
-} from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
-interface DashboardStats {
-  totalProducts: number;
-  totalOrders: number;
-  totalSales: number;
-  pendingPayouts: number;
-  viewsThisMonth: number;
-  averageRating: number;
+interface Transaction {
+  id: string;
+  amount: string;
+  currency: string;
+  item: string;
+  reference: string;
+  status: string;
+  paid_at: string;
+  buyer_name: string;
+  buyer_email: string;
+  channel: string;
+  created_at: string;
 }
 
-interface RecentOrder {
+interface Payout {
   id: string;
-  customer_name: string;
-  total_amount: number;
+  amount: string;
+  reference: string;
   status: string;
+  paid_at: string;
+  transfer_code: string;
+  reason: string;
   created_at: string;
-  product_count: number;
 }
 
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  stock_quantity: number;
-  status: string;
-  created_at: string;
-  product_images?: Array<{ url: string; alt: string; primary: boolean }>;
+interface VendorStats {
+  total_orders: number;
+  total_sales: number;
+  successful_orders: number;
+  pending_orders: number;
+  total_payouts: number;
+  total_paid: number;
+  pending_amount: number;
+  total_products: number;
 }
 
 export default function VendorDashboard() {
-  const { user } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, token } = useAuth();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Redirect if not a vendor
-  useEffect(() => {
-    if (user && user.role !== 'vendor') {
-      setLocation('/');
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+    queryKey: ['vendor-transactions'],
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/vendor/transactions', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
+    },
+    enabled: !!token
+  });
+
+  const { data: payouts = [], isLoading: payoutsLoading } = useQuery({
+    queryKey: ['vendor-payouts'],
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/vendor/payouts', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch payouts');
+      return response.json();
+    },
+    enabled: !!token
+  });
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['vendor-stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/dashboard/vendor/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch stats');
+      return response.json();
+    },
+    enabled: !!token
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'success': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  }, [user, setLocation]);
+  };
 
-  // Fetch dashboard statistics
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['/api/vendor/dashboard/stats'],
-    enabled: !!user && user.role === 'vendor'
-  });
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'success': return <CheckCircle className="w-4 h-4" />;
+      case 'pending': return <Clock className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
+    }
+  };
 
-  // Fetch recent orders
-  const { data: recentOrders, isLoading: ordersLoading } = useQuery<RecentOrder[]>({
-    queryKey: ['/api/vendor/orders/recent'],
-    enabled: !!user && user.role === 'vendor'
-  });
+  const formatCurrency = (amount: string | number) => {
+    return `GH₵${parseFloat(amount.toString()).toFixed(2)}`;
+  };
 
-  // Fetch vendor products
-  const { data: products, isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ['/api/vendor/products'],
-    enabled: !!user && user.role === 'vendor'
-  });
+  const syncData = async () => {
+    try {
+      const response = await fetch('/api/sync/transactions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Data Synced",
+          description: "Transaction data has been synchronized with Paystack."
+        });
+        
+        // Refresh the data
+        window.location.reload();
+      } else {
+        throw new Error('Sync failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
-  if (!user || user.role !== 'vendor') {
+  if (transactionsLoading || payoutsLoading || statsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>You need to be a vendor to access this page.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/vendor/register">
-              <Button className="w-full">Become a Vendor</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-ktu-grey flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ktu-orange"></div>
       </div>
     );
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'processing':
-        return <Clock className="h-4 w-4 text-blue-500" />;
-      case 'pending':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      default:
-        return <XCircle className="h-4 w-4 text-red-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-red-100 text-red-800';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Vendor Dashboard</h1>
-              <p className="text-gray-600 mt-1">
-                Welcome back, {user?.business_name || user?.full_name}!
-              </p>
-            </div>
-            <div className="flex space-x-3">
-              <Link href="/vendor/products">
-                <Button variant="outline">
-                  <Package className="h-4 w-4 mr-2" />
-                  Manage Products
+    <div className="min-h-screen bg-ktu-grey">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-ktu-light-blue">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-ktu-deep-blue">KTU Student Vendor Dashboard</h1>
+                <p className="text-ktu-dark-grey">Welcome back, {user?.business_name || user?.full_name}</p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button
+                  onClick={syncData}
+                  variant="outline"
+                  className="flex items-center space-x-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Sync Data</span>
                 </Button>
-              </Link>
-              <Link href="/vendor/settings">
-                <Button variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </Link>
+                <Badge variant="outline" className="text-ktu-orange border-ktu-orange">
+                  <Package className="w-4 h-4 mr-1" />
+                  KTU Student Vendor
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? '...' : stats?.totalProducts || 0}
-              </div>
-              <p className="text-xs text-gray-600">Active listings</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? '...' : stats?.totalOrders || 0}
-              </div>
-              <p className="text-xs text-gray-600">All time orders</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-              <DollarSign className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ₵{statsLoading ? '0.00' : stats?.totalSales?.toFixed(2) || '0.00'}
-              </div>
-              <p className="text-xs text-gray-600">Revenue earned</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-              <Star className="h-4 w-4 text-orange-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {statsLoading ? '0.0' : stats?.averageRating?.toFixed(1) || '0.0'}
-              </div>
-              <p className="text-xs text-gray-600">Customer rating</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Recent Orders</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="transactions">Sales</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Quick Actions */}
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>Manage your store efficiently</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <Link href="/vendor/products" className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add New Product
-                    </Button>
-                  </Link>
-                  <Link href="/vendor/orders" className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      View All Orders
-                    </Button>
-                  </Link>
-                  <Link href="/vendor/analytics" className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      View Analytics
-                    </Button>
-                  </Link>
-                  <Link href="/vendor/settings" className="block">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Settings className="h-4 w-4 mr-2" />
-                      Store Settings
-                    </Button>
-                  </Link>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(stats?.total_sales || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.successful_orders || 0} successful orders
+                  </p>
                 </CardContent>
               </Card>
 
-              {/* Store Performance */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Store Performance</CardTitle>
-                  <CardDescription>This month's highlights</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                  <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Eye className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">Store Views</span>
-                    </div>
-                    <span className="font-semibold">
-                      {statsLoading ? '...' : stats?.viewsThisMonth || 0}
-                    </span>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.total_orders || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {stats?.pending_orders || 0} pending
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Products</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats?.total_products || 0}</div>
+                  <p className="text-xs text-muted-foreground">Active products</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {formatCurrency(stats?.pending_amount || 0)}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">Pending Payouts</span>
-                    </div>
-                    <span className="font-semibold">
-                      ₵{statsLoading ? '0.00' : stats?.pendingPayouts?.toFixed(2) || '0.00'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">Active Products</span>
-                    </div>
-                    <span className="font-semibold">
-                      {statsLoading ? '...' : products?.filter(p => p.status === 'active').length || 0}
-                    </span>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Total paid: {formatCurrency(stats?.total_paid || 0)}
+                  </p>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          {/* Products Tab */}
-          <TabsContent value="products">
+            {/* Recent Transactions */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Your Products</CardTitle>
-                  <CardDescription>Manage your product catalog</CardDescription>
-                </div>
-                <Link href="/vendor/products">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Button>
-                </Link>
+              <CardHeader>
+                <CardTitle>Recent Sales</CardTitle>
               </CardHeader>
               <CardContent>
-                {productsLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg animate-pulse">
-                        <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : products && products.length > 0 ? (
-                  <div className="space-y-4">
-                    {products.slice(0, 5).map((product) => (
-                      <div key={product.id} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50">
-                        <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-                          {product.product_images && product.product_images.length > 0 ? (
-                            <img 
-                              src={product.product_images[0].url} 
-                              alt={product.product_images[0].alt}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-6 w-6 text-gray-400" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{product.title}</h4>
-                          <p className="text-sm text-gray-600">₵{product.price.toFixed(2)}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant={product.status === 'active' ? 'default' : 'secondary'}>
-                              {product.status}
-                            </Badge>
-                            <span className="text-xs text-gray-500">
-                              Stock: {product.stock_quantity}
-                            </span>
-                          </div>
-                        </div>
-                        <Link href={`/vendor/products`}>
-                          <Button variant="ghost" size="sm">Edit</Button>
-                        </Link>
-                      </div>
-                    ))}
-                    {products.length > 5 && (
-                      <div className="text-center pt-4">
-                        <Link href="/vendor/products">
-                          <Button variant="outline">View All Products</Button>
-                        </Link>
-                      </div>
-                    )}
+                {transactions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No sales yet. Your transactions will appear here.</p>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No products yet</h3>
-                    <p className="text-gray-600 mb-4">Start by adding your first product to your store.</p>
-                    <Link href="/vendor/products">
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Your First Product
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Orders Tab */}
-          <TabsContent value="orders">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Recent Orders</CardTitle>
-                  <CardDescription>Your latest customer orders</CardDescription>
-                </div>
-                <Link href="/vendor/orders">
-                  <Button variant="outline">View All Orders</Button>
-                </Link>
-              </CardHeader>
-              <CardContent>
-                {ordersLoading ? (
                   <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center space-x-4 p-4 border rounded-lg animate-pulse">
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                          <div className="h-3 bg-gray-200 rounded w-1/4"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : recentOrders && recentOrders.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    {transactions.slice(0, 5).map((transaction: Transaction) => (
+                      <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center space-x-4">
-                          {getStatusIcon(order.status)}
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <ShoppingBag className="w-5 h-5 text-blue-600" />
+                          </div>
                           <div>
-                            <h4 className="font-semibold">Order #{order.id.slice(0, 8)}</h4>
-                            <p className="text-sm text-gray-600">
-                              {order.customer_name} • {order.product_count} item(s)
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(order.created_at).toLocaleDateString()}
-                            </p>
+                            <div className="font-medium">{transaction.item}</div>
+                            <div className="text-sm text-gray-600">{transaction.buyer_name}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold">₵{order.total_amount.toFixed(2)}</p>
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status}
+                          <div className="font-medium">{formatCurrency(transaction.amount)}</div>
+                          <Badge className={getStatusColor(transaction.status)}>
+                            {transaction.status}
                           </Badge>
                         </div>
                       </div>
                     ))}
                   </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="transactions" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Sales Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {transactions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No sales yet</h3>
+                    <p className="text-gray-600">Your sales transactions will appear here once customers make purchases.</p>
+                  </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
-                    <p className="text-gray-600">Orders will appear here when customers start buying from your store.</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-medium">Item</th>
+                          <th className="text-left py-3 px-4 font-medium">Buyer</th>
+                          <th className="text-left py-3 px-4 font-medium">Amount</th>
+                          <th className="text-left py-3 px-4 font-medium">Status</th>
+                          <th className="text-left py-3 px-4 font-medium">Date</th>
+                          <th className="text-left py-3 px-4 font-medium">Reference</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.map((transaction: Transaction) => (
+                          <tr key={transaction.id} className="border-b hover:bg-gray-50">
+                            <td className="py-4 px-4">
+                              <div className="font-medium">{transaction.item}</div>
+                              <div className="text-sm text-gray-600">{transaction.channel}</div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center space-x-2">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <div>
+                                  <div className="font-medium">{transaction.buyer_name}</div>
+                                  <div className="text-sm text-gray-600">{transaction.buyer_email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="font-medium">{formatCurrency(transaction.amount)}</div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge className={getStatusColor(transaction.status)}>
+                                {getStatusIcon(transaction.status)}
+                                <span className="ml-1 capitalize">{transaction.status}</span>
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm">
+                                {format(new Date(transaction.paid_at || transaction.created_at), 'MMM dd, yyyy')}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {format(new Date(transaction.paid_at || transaction.created_at), 'hh:mm a')}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm font-mono text-gray-600">
+                                {transaction.reference}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics">
+          <TabsContent value="payouts" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Store Analytics</CardTitle>
-                <CardDescription>Detailed insights into your store performance</CardDescription>
+                <CardTitle>Payout History</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics Coming Soon</h3>
-                  <p className="text-gray-600 mb-4">
-                    Detailed analytics including sales charts, customer insights, and performance metrics will be available soon.
-                  </p>
-                  <Link href="/vendor/analytics">
-                    <Button variant="outline">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      View Full Analytics
-                    </Button>
-                  </Link>
-                </div>
+                {payouts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No payouts yet</h3>
+                    <p className="text-gray-600">Your payout history will appear here once transfers are processed.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-medium">Amount</th>
+                          <th className="text-left py-3 px-4 font-medium">Status</th>
+                          <th className="text-left py-3 px-4 font-medium">Date</th>
+                          <th className="text-left py-3 px-4 font-medium">Reference</th>
+                          <th className="text-left py-3 px-4 font-medium">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payouts.map((payout: Payout) => (
+                          <tr key={payout.id} className="border-b hover:bg-gray-50">
+                            <td className="py-4 px-4">
+                              <div className="font-medium">{formatCurrency(payout.amount)}</div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <Badge className={getStatusColor(payout.status)}>
+                                {getStatusIcon(payout.status)}
+                                <span className="ml-1 capitalize">{payout.status}</span>
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm">
+                                {format(new Date(payout.paid_at || payout.created_at), 'MMM dd, yyyy')}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                {format(new Date(payout.paid_at || payout.created_at), 'hh:mm a')}
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm font-mono text-gray-600">
+                                {payout.reference}
+                              </div>
+                              {payout.transfer_code && (
+                                <div className="text-xs text-gray-500">
+                                  {payout.transfer_code}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="text-sm text-gray-600">
+                                {payout.reason || 'Vendor payout'}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
