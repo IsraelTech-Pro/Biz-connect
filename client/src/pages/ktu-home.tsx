@@ -108,6 +108,16 @@ export default function KTUHome() {
     }
   });
 
+  // Fetch platform statistics
+  const { data: platformStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/platform/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/platform/stats');
+      if (!response.ok) throw new Error('Failed to fetch platform stats');
+      return response.json();
+    }
+  });
+
   // Hero slides with KTU focus
   const heroSlides = [
     {
@@ -176,37 +186,37 @@ export default function KTUHome() {
     }
   ];
 
-  // Featured categories
+  // Categories with real counts from database
   const categories = [
     { 
       name: "Tech & Innovation", 
       bgImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=200&fit=crop",
-      count: 45
+      count: platformStats?.categoryBreakdown?.['tech-and-innovation'] || 0
     },
     { 
       name: "Fashion & Design", 
       bgImage: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=300&h=200&fit=crop",
-      count: 32
+      count: platformStats?.categoryBreakdown?.['fashion-and-design'] || 0
     },
     { 
       name: "Food & Catering", 
       bgImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=200&fit=crop",
-      count: 28
+      count: platformStats?.categoryBreakdown?.['food-and-catering'] || 0
     },
     { 
       name: "Services", 
       bgImage: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop",
-      count: 51
+      count: platformStats?.categoryBreakdown?.['services'] || 0
     },
     { 
       name: "Arts & Crafts", 
       bgImage: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=300&h=200&fit=crop",
-      count: 19
+      count: platformStats?.categoryBreakdown?.['arts-and-crafts'] || 0
     },
     { 
       name: "Digital Marketing", 
       bgImage: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=200&fit=crop",
-      count: 23
+      count: platformStats?.categoryBreakdown?.['digital-marketing'] || 0
     }
   ];
 
@@ -407,10 +417,26 @@ export default function KTUHome() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { label: "Active Businesses", value: "150+", icon: Store },
-              { label: "Student Entrepreneurs", value: "300+", icon: Users },
-              { label: "Success Stories", value: "50+", icon: Award },
-              { label: "Mentors Available", value: "25+", icon: GraduationCap }
+              { 
+                label: "Active Businesses", 
+                value: statsLoading ? "..." : (platformStats?.activeBusinesses || 0), 
+                icon: Store 
+              },
+              { 
+                label: "Student Entrepreneurs", 
+                value: statsLoading ? "..." : (platformStats?.studentEntrepreneurs || 0), 
+                icon: Users 
+              },
+              { 
+                label: "Success Stories", 
+                value: statsLoading ? "..." : (platformStats?.successStories || 0), 
+                icon: Award 
+              },
+              { 
+                label: "Mentors Available", 
+                value: statsLoading ? "..." : (platformStats?.activeMentors || 0), 
+                icon: GraduationCap 
+              }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}

@@ -1993,6 +1993,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Platform statistics endpoint - public
+  app.get('/api/platform/stats', async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const allProducts = await storage.getProducts();
+      const allOrders = await storage.getOrders();
+      const allMentors = await storage.getMentors();
+      const allPrograms = await storage.getPrograms();
+      
+      const vendors = allUsers.filter(u => u.role === 'vendor');
+      const activeBusinesses = vendors.filter(v => v.is_approved);
+      const completedOrders = allOrders.filter(o => o.status === 'completed');
+      
+      // Get category breakdown with real counts
+      const categoryStats = activeBusinesses.reduce((acc: any, vendor: any) => {
+        const category = vendor.business_category || 'services';
+        const normalizedCategory = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
+        acc[normalizedCategory] = (acc[normalizedCategory] || 0) + 1;
+        return acc;
+      }, {});
+
+      const stats = {
+        activeBusinesses: activeBusinesses.length,
+        studentEntrepreneurs: vendors.length,
+        totalProducts: allProducts.length,
+        completedOrders: completedOrders.length,
+        activeMentors: allMentors.filter(m => m.status === 'active').length,
+        successStories: completedOrders.length, // Using completed orders as success metric
+        categoryBreakdown: categoryStats,
+        pendingApprovals: vendors.filter(v => !v.is_approved).length
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error('Platform stats error:', error);
+      res.status(500).json({ message: 'Failed to fetch platform statistics' });
+    }
+  });
+
   // Admin API endpoints with real data
   app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
     try {

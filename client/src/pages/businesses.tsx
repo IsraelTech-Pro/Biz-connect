@@ -114,87 +114,7 @@ export default function Businesses() {
     { value: 'health-and-wellness', label: 'Health & Wellness' }
   ];
 
-  // Use real data from database
-  const realBusinesses = businesses.length > 0 ? businesses : [
-    {
-      id: 1,
-      name: "TechFlow Solutions",
-      description: "Innovative web development and mobile app solutions for modern businesses",
-      category: "Tech & Innovation",
-      location: "KTU Innovation Hub",
-      owner: "Kwame Asante",
-      status: "Active",
-      products_count: 15,
-      followers: 89,
-      rating: 4.8,
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=250&fit=crop"
-    },
-    {
-      id: 2,
-      name: "StyleCraft Designs",
-      description: "Custom fashion designs and tailoring services with modern African aesthetics",
-      category: "Fashion & Design",
-      location: "KTU Main Campus",
-      owner: "Ama Osei",
-      status: "Active",
-      products_count: 32,
-      followers: 156,
-      rating: 4.9,
-      image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&h=250&fit=crop"
-    },
-    {
-      id: 3,
-      name: "FreshBite Catering",
-      description: "Healthy, delicious meals and catering services for events and daily dining",
-      category: "Food & Catering",
-      location: "KTU Food Court",
-      owner: "Kofi Mensah",
-      status: "Active",
-      products_count: 28,
-      followers: 203,
-      rating: 4.7,
-      image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop"
-    },
-    {
-      id: 4,
-      name: "DigitalBoost Marketing",
-      description: "Social media management and digital marketing for small businesses",
-      category: "Digital Marketing",
-      location: "KTU Business Center",
-      owner: "Efua Donkor",
-      status: "Active",
-      products_count: 12,
-      followers: 78,
-      rating: 4.6,
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop"
-    },
-    {
-      id: 5,
-      name: "Craft & Create Studio",
-      description: "Handmade crafts, jewelry, and custom art pieces with local inspiration",
-      category: "Arts & Crafts",
-      location: "KTU Art Department",
-      owner: "Akosua Boateng",
-      status: "Active",
-      products_count: 45,
-      followers: 134,
-      rating: 4.8,
-      image: "https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=400&h=250&fit=crop"
-    },
-    {
-      id: 6,
-      name: "SmartTutor Academy",
-      description: "Academic tutoring and exam preparation services for all levels",
-      category: "Education & Tutoring",
-      location: "KTU Library Complex",
-      owner: "Yaw Osei",
-      status: "Active",
-      products_count: 8,
-      followers: 92,
-      rating: 4.9,
-      image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=250&fit=crop"
-    }
-  ];
+  // Only use real data from database - no hardcoded fallbacks
 
   // Transform vendors to business format with proper categories
   const transformedBusinesses = businesses.map((vendor: any) => ({
@@ -247,10 +167,26 @@ export default function Businesses() {
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[
-              { label: "Active Businesses", value: "150+", icon: Store },
-              { label: "Categories", value: "8", icon: Grid },
-              { label: "Student Entrepreneurs", value: "300+", icon: Users },
-              { label: "Success Stories", value: "50+", icon: Award }
+              { 
+                label: "Active Businesses", 
+                value: filteredBusinesses.length || 0, 
+                icon: Store 
+              },
+              { 
+                label: "Categories", 
+                value: categories.length - 1, // Exclude 'all' category
+                icon: Grid 
+              },
+              { 
+                label: "Student Entrepreneurs", 
+                value: transformedBusinesses.length || 0, 
+                icon: Users 
+              },
+              { 
+                label: "Success Stories", 
+                value: transformedBusinesses.filter(b => b.status === 'Active').length || 0, 
+                icon: Award 
+              }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
