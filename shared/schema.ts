@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("buyer"), // buyer, vendor, admin
   business_name: text("business_name"),
   business_description: text("business_description"),
+  business_category: text("business_category"),
   phone: text("phone"),
   whatsapp: text("whatsapp"),
   address: text("address"),

@@ -2047,8 +2047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get category breakdown with real counts from database
       const categoryStats = activeBusinesses.reduce((acc: any, vendor: any) => {
         const category = vendor.business_category || 'services';
-        const normalizedCategory = category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
-        acc[normalizedCategory] = (acc[normalizedCategory] || 0) + 1;
+        acc[category] = (acc[category] || 0) + 1;
         return acc;
       }, {});
 

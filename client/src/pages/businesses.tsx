@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'wouter';
 import type { User } from '@shared/schema';
+import { getFilterCategories, getCategoryLabel, getCategoryColor, normalizeCategoryValue } from '@shared/categories';
 
 const BusinessCard = ({ business, index }: { business: any; index: number }) => {
   return (
@@ -28,8 +29,8 @@ const BusinessCard = ({ business, index }: { business: any; index: number }) => 
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
             />
             <div className="absolute top-3 right-3">
-              <span className="bg-white/90 text-ktu-deep-blue px-2 py-1 rounded text-xs font-medium">
-                {business.category}
+              <span className={`px-2 py-1 rounded text-xs font-medium ${business.categoryColor}`}>
+                {business.categoryLabel}
               </span>
             </div>
             <div className="absolute top-3 left-3">
@@ -101,18 +102,8 @@ export default function Businesses() {
     queryKey: ['/api/vendors'],
   }) as { data: any[], isLoading: boolean };
 
-  // Categories matching homepage sections
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'tech-and-innovation', label: 'Tech & Innovation' },
-    { value: 'fashion-and-design', label: 'Fashion & Design' },
-    { value: 'food-and-catering', label: 'Food & Catering' },
-    { value: 'services', label: 'Services' },
-    { value: 'arts-and-crafts', label: 'Arts & Crafts' },
-    { value: 'digital-marketing', label: 'Digital Marketing' },
-    { value: 'education-and-tutoring', label: 'Education & Tutoring' },
-    { value: 'health-and-wellness', label: 'Health & Wellness' }
-  ];
+  // Import centralized categories
+  const categories = getFilterCategories();
 
   // Only use real data from database - no hardcoded fallbacks
 
@@ -122,6 +113,8 @@ export default function Businesses() {
     name: vendor.business_name || vendor.full_name,
     description: vendor.business_description || vendor.bio || "KTU Student Entrepreneur",
     category: vendor.business_category || "services", // Use database category or default to services
+    categoryLabel: getCategoryLabel(vendor.business_category || "services"),
+    categoryColor: getCategoryColor(vendor.business_category || "services"),
     location: vendor.address || "KTU Campus",
     owner: vendor.full_name,
     status: vendor.is_approved ? "Active" : "Pending",
@@ -136,10 +129,9 @@ export default function Businesses() {
     const matchesSearch = business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          business.description.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Improve category matching - normalize both sides for comparison
-    const normalizeCategory = (cat: string) => cat.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and');
-    const businessCategoryNormalized = normalizeCategory(business.category);
-    const selectedCategoryNormalized = normalizeCategory(selectedCategory);
+    // Improve category matching - use centralized normalization
+    const businessCategoryNormalized = normalizeCategoryValue(business.category);
+    const selectedCategoryNormalized = normalizeCategoryValue(selectedCategory);
     
     const matchesCategory = selectedCategory === 'all' || 
                           businessCategoryNormalized === selectedCategoryNormalized ||

@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // import { Badge } from '@/components/ui/badge';
 import { Link } from 'wouter';
 import type { Product, User } from '@shared/schema';
+import { getCategoryLabel } from '@shared/categories';
 
 // KTU BizConnect Business Card Component
 const BusinessCard = ({ business }: { business: any }) => {
@@ -26,7 +27,7 @@ const BusinessCard = ({ business }: { business: any }) => {
           />
           <div className="absolute top-2 right-2">
             <span className="bg-white/90 text-ktu-deep-blue px-2 py-1 rounded text-xs font-medium">
-              {business.category}
+              {business.categoryLabel || business.category}
             </span>
           </div>
         </div>
