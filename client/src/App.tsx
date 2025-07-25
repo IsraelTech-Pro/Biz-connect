@@ -142,7 +142,9 @@ function Router() {
       <Route path="/mobile-money" component={MobileMoney} />
       
       {/* Contact */}
-      <Route path="/contact-vendor/:vendorId" component={ContactVendor} />
+      <Route path="/contact-vendor/:vendorId">
+        {(params) => <ContactVendor vendorId={params.vendorId} />}
+      </Route>
       
       <Route component={NotFound} />
     </Switch>
