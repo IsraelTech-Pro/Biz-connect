@@ -91,13 +91,30 @@ export default function AdminDashboard() {
     }
   }, [setLocation]);
 
+  // Get admin session data
+  const adminToken = localStorage.getItem('admin_token');
+  const adminUser = localStorage.getItem('admin_user');
+  
+  // If no admin session, render loading or redirect (useEffect will handle redirect)
+  if (!adminToken || !adminUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleBusinessApproval = async (businessId: string, approved: boolean) => {
+    const adminToken = localStorage.getItem('admin_token');
     try {
       const response = await fetch(`/api/admin/vendors/${businessId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${adminToken}`
         },
         body: JSON.stringify({ approved })
       });
@@ -122,52 +139,43 @@ export default function AdminDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/stats', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch admin stats');
       return response.json();
     },
-    enabled: !!token && user?.role === 'admin'
+    enabled: !!adminToken
   });
 
   const { data: businesses = [], isLoading: businessesLoading, refetch: refetchBusinesses } = useQuery<Business[]>({
     queryKey: ['/api/admin/businesses'],
     queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/businesses', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch businesses');
       return response.json();
     },
-    enabled: !!token && user?.role === 'admin'
+    enabled: !!adminToken
   });
 
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
     queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
     },
-    enabled: !!token && user?.role === 'admin'
+    enabled: !!adminToken
   });
 
-  if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen bg-ktu-grey flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="text-center py-8">
-            <Shield className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-ktu-deep-blue mb-2">Access Denied</h2>
-            <p className="text-ktu-dark-grey">You need admin privileges to access this page.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Admin authentication is already handled by the useEffect and early return above
 
   const statCards = [
     {
