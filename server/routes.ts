@@ -1993,6 +1993,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public vendors/businesses endpoint with real product counts
+  app.get('/api/vendors', async (req, res) => {
+    try {
+      const allUsers = await storage.getUsers();
+      const allProducts = await storage.getProducts();
+      
+      // Filter for approved vendors only
+      const vendors = allUsers.filter(u => u.role === 'vendor' && u.is_approved);
+      
+      // Add real product counts to each vendor
+      const vendorsWithCounts = vendors.map(vendor => {
+        const vendorProducts = allProducts.filter(p => p.vendor_id === vendor.id);
+        return {
+          ...vendor,
+          products_count: vendorProducts.length,
+          recent_products: vendorProducts.slice(0, 3), // Latest 3 products for preview
+          // Remove sensitive data
+          password: undefined,
+          paystack_subaccount: undefined,
+          momo_number: undefined
+        };
+      });
+      
+      res.json(vendorsWithCounts);
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      res.status(500).json({ message: 'Failed to get vendors' });
+    }
+  });
+
   // Platform statistics endpoint - public
   app.get('/api/platform/stats', async (req, res) => {
     try {

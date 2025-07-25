@@ -63,11 +63,11 @@ const BusinessCard = ({ business, index }: { business: any; index: number }) => 
               <div className="flex items-center space-x-2 text-xs text-ktu-dark-grey">
                 <div className="flex items-center">
                   <Store className="h-3 w-3 mr-1" />
-                  <span>{business.products_count || Math.floor(Math.random() * 20 + 5)} products</span>
+                  <span>{business.products_count || 0} products</span>
                 </div>
                 <div className="flex items-center">
                   <Users className="h-3 w-3 mr-1" />
-                  <span>{business.followers || Math.floor(Math.random() * 100 + 20)} followers</span>
+                  <span>{business.followers || 0} followers</span>
                 </div>
               </div>
               
@@ -125,9 +125,9 @@ export default function Businesses() {
     location: vendor.address || "KTU Campus",
     owner: vendor.full_name,
     status: vendor.is_approved ? "Active" : "Pending",
-    products_count: Math.floor(Math.random() * 20 + 5),
-    followers: Math.floor(Math.random() * 100 + 20),
-    rating: 4.0 + Math.random(),
+    products_count: vendor.products_count || 0, // Real product count from database
+    followers: 0, // Will be populated from actual follower count in future
+    rating: 0, // Will be populated from actual ratings in future
     image: vendor.business_logo?.[0]?.url || vendor.profile_image?.[0]?.url || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=250&fit=crop"
   }));
 
