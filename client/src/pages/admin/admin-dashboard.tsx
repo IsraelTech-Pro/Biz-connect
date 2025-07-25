@@ -254,10 +254,17 @@ export default function AdminDashboard() {
 
   const quickActions = [
     {
+      title: "Mentorship Hub",
+      description: "Manage mentors and programs comprehensively",
+      icon: BookOpen,
+      color: "bg-ktu-orange",
+      action: "/admin/mentorship"
+    },
+    {
       title: "Manage Mentors",
       description: "View, add, and manage business mentors",
       icon: BookOpen,
-      color: "bg-ktu-orange",
+      color: "bg-green-600",
       action: "/admin/mentors"
     },
     {

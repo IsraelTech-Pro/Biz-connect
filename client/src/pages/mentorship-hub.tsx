@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { 
   GraduationCap, Star, Calendar, Clock, Users, MapPin,
   MessageCircle, Video, Phone, Mail, Award, BookOpen,
@@ -148,7 +149,51 @@ export default function MentorshipHub() {
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const mentors = [
+  // Fetch real mentors data from database
+  const { data: mentorsData = [], isLoading: mentorsLoading } = useQuery({
+    queryKey: ['/api/mentors'],
+  });
+
+  // Fetch real programs data from database
+  const { data: programsData = [], isLoading: programsLoading } = useQuery({
+    queryKey: ['/api/programs'],
+  });
+
+  // Transform mentors data to match component expectations
+  const mentors = mentorsData.map((mentor: any) => ({
+    id: mentor.id,
+    name: mentor.full_name,
+    title: mentor.position,
+    company: mentor.company,
+    avatar: mentor.profile_image || "https://images.unsplash.com/photo-1494790108755-2616b2b9af25?w=100&h=100&fit=crop&crop=face",
+    rating: 4.8, // Default rating until we implement real ratings
+    reviews: 50, // Default reviews count
+    experience: mentor.years_experience,
+    studentsCount: 45, // Default until we track real metrics
+    successRate: 90, // Default success rate
+    specializations: mentor.specializations ? mentor.specializations.split(',').map((s: string) => s.trim()) : [],
+    availability: mentor.availability,
+    hourlyRate: 75, // Default rate
+    bio: mentor.bio,
+    linkedin: mentor.linkedin_url
+  }));
+
+  // Transform programs data to match component expectations
+  const programs = programsData.map((program: any) => ({
+    id: program.id,
+    title: program.title,
+    description: program.description,
+    icon: TrendingUp, // Default icon
+    duration: program.duration,
+    participants: program.max_participants - (program.participants_count || 0),
+    startDate: new Date(program.start_date).toLocaleDateString(),
+    price: 0, // Programs are free for now
+    featured: program.status === 'active',
+    category: program.program_type,
+    mentor: mentorsData.find((m: any) => m.id === program.mentor_id)
+  }));
+
+  const mockMentors = [
     {
       id: 1,
       name: "Dr. Akosua Frimpong",
@@ -241,7 +286,7 @@ export default function MentorshipHub() {
     }
   ];
 
-  const programs = [
+  const mockPrograms = [
     {
       id: 1,
       title: "KTU Startup Accelerator",
@@ -304,11 +349,11 @@ export default function MentorshipHub() {
     { value: 'weekends', label: 'Weekends' }
   ];
 
-  const filteredMentors = mentors.filter(mentor => {
+  const filteredMentors = (mentors.length > 0 ? mentors : mockMentors).filter((mentor: any) => {
     const matchesSearch = mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         mentor.specializations.some(spec => spec.toLowerCase().includes(searchTerm.toLowerCase()));
+                         mentor.specializations.some((spec: string) => spec.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesExpertise = selectedExpertise === 'all' || 
-                           mentor.specializations.some(spec => spec.includes(selectedExpertise));
+                           mentor.specializations.some((spec: string) => spec.includes(selectedExpertise));
     const matchesAvailability = selectedAvailability === 'all' || mentor.availability === selectedAvailability;
     return matchesSearch && matchesExpertise && matchesAvailability;
   });
@@ -422,7 +467,7 @@ export default function MentorshipHub() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredMentors.map((mentor, index) => (
+                {filteredMentors.map((mentor: any, index: number) => (
                   <MentorCard key={mentor.id} mentor={mentor} index={index} />
                 ))}
               </div>
@@ -438,7 +483,7 @@ export default function MentorshipHub() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {programs.map((program, index) => (
+              {(programs.length > 0 ? programs : mockPrograms).map((program: any, index: number) => (
                 <ProgramCard key={program.id} program={program} index={index} />
               ))}
             </div>

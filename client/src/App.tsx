@@ -49,6 +49,7 @@ import VendorSettings from "@/pages/vendor/settings";
 // Admin pages
 import AdminLogin from "./pages/admin/admin-login";
 import AdminDashboard from "./pages/admin/admin-dashboard";
+import AdminMentorship from "./pages/admin/admin-mentorship";
 import AddMentor from "./pages/admin/mentors/add";
 import AddProgram from "./pages/admin/programs/add";
 import AddResource from "./pages/admin/resources/add";
@@ -107,6 +108,7 @@ function Router() {
       <Route path="/vendor/settings" component={VendorSettings} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/mentorship" component={AdminMentorship} />
       <Route path="/admin/mentors/add" component={AddMentor} />
       <Route path="/admin/mentors" component={MentorsList} />
       <Route path="/admin/programs/add" component={AddProgram} />

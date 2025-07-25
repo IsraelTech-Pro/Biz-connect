@@ -2023,6 +2023,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mentors endpoint - public
+  app.get('/api/mentors', async (req, res) => {
+    try {
+      const mentors = await storage.getMentors();
+      res.json(mentors);
+    } catch (error) {
+      console.error('Error fetching mentors:', error);
+      res.status(500).json({ message: 'Failed to get mentors' });
+    }
+  });
+
+  // Programs endpoint - public
+  app.get('/api/programs', async (req, res) => {
+    try {
+      const programs = await storage.getPrograms();
+      res.json(programs);
+    } catch (error) {
+      console.error('Error fetching programs:', error);
+      res.status(500).json({ message: 'Failed to get programs' });
+    }
+  });
+
   // Platform statistics endpoint - public
   app.get('/api/platform/stats', async (req, res) => {
     try {
