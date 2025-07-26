@@ -89,6 +89,36 @@ const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Middleware to verify admin token
+const authenticateAdminToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Admin access token required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, async (err: any, decoded: any) => {
+    if (err) return res.status(403).json({ message: 'Invalid admin token' });
+    
+    if (decoded.type !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    
+    try {
+      const adminUser = await storage.getAdminUserById(decoded.id);
+      if (!adminUser || !adminUser.is_active) {
+        return res.status(403).json({ message: 'Admin user not found or inactive' });
+      }
+      req.adminUser = adminUser;
+      next();
+    } catch (error) {
+      console.error('Admin authentication error:', error);
+      return res.status(500).json({ message: 'Admin authentication error' });
+    }
+  });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
@@ -2092,7 +2122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin API endpoints with real data
-  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/stats', authenticateAdminToken, async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
       const allProducts = await storage.getProducts();
@@ -2130,7 +2160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/businesses', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/businesses', authenticateAdminToken, async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
       const vendors = allUsers.filter(u => u.role === 'vendor');
@@ -2163,7 +2193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/users', authenticateAdminToken, async (req, res) => {
     try {
       const allUsers = await storage.getUsers();
       const usersData = allUsers.map(user => ({
@@ -2226,7 +2256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for mentors with full CRUD
-  app.get('/api/admin/mentors', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/mentors', authenticateAdminToken, async (req, res) => {
     try {
       const mentors = await storage.getMentors();
       res.json(mentors);
@@ -2236,7 +2266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/mentors', authenticateToken, requireAdmin, async (req, res) => {
+  app.post('/api/admin/mentors', authenticateAdminToken, async (req, res) => {
     try {
       const mentorData = req.body;
       const mentor = await storage.createMentor(mentorData);
@@ -2247,7 +2277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const mentor = await storage.getMentor(id);
@@ -2261,7 +2291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.patch('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -2273,7 +2303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/mentors/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.delete('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteMentor(id);
@@ -2285,7 +2315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for programs with full CRUD
-  app.get('/api/admin/programs', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/programs', authenticateAdminToken, async (req, res) => {
     try {
       const programs = await storage.getPrograms();
       res.json(programs);
@@ -2295,7 +2325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/programs', authenticateToken, requireAdmin, async (req, res) => {
+  app.post('/api/admin/programs', authenticateAdminToken, async (req, res) => {
     try {
       const programData = req.body;
       const program = await storage.createProgram(programData);
@@ -2306,7 +2336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const program = await storage.getProgram(id);
@@ -2320,7 +2350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.patch('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -2332,7 +2362,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/programs/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.delete('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteProgram(id);
@@ -2469,35 +2499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Middleware to verify admin token
-  const authenticateAdminToken = (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) {
-      return res.status(401).json({ message: 'Admin access token required' });
-    }
-
-    jwt.verify(token, JWT_SECRET, async (err: any, decoded: any) => {
-      if (err) return res.status(403).json({ message: 'Invalid admin token' });
-      
-      if (decoded.type !== 'admin') {
-        return res.status(403).json({ message: 'Admin access required' });
-      }
-      
-      try {
-        const adminUser = await storage.getAdminUserById(decoded.id);
-        if (!adminUser || !adminUser.is_active) {
-          return res.status(403).json({ message: 'Admin user not found or inactive' });
-        }
-        req.adminUser = adminUser;
-        next();
-      } catch (error) {
-        console.error('Admin authentication error:', error);
-        return res.status(500).json({ message: 'Admin authentication error' });
-      }
-    });
-  };
 
   // Admin profile route
   app.get('/api/admin/profile', authenticateAdminToken, async (req, res) => {
