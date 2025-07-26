@@ -4,7 +4,8 @@ import {
   BookOpen, FileText, Video, Download, ExternalLink, 
   Search, Filter, Star, Clock, Eye, Users,
   TrendingUp, Calculator, Lightbulb, Target,
-  Briefcase, PieChart, Calendar, CheckCircle
+  Briefcase, PieChart, Calendar, CheckCircle,
+  FileDown, Play, Wrench
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,19 +13,102 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 
-const ResourceCard = ({ resource, index }: { resource: any; index: number }) => {
+// Types from backend schema
+interface Resource {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  category: string;
+  resource_type: string;
+  file_url?: string;
+  external_link?: string;
+  tags: string[];
+  difficulty_level: string;
+  estimated_time?: string;
+  status: string;
+  views: number;
+  downloads: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const ResourceCard = ({ resource, index }: { resource: Resource; index: number }) => {
+  const { toast } = useToast();
+  
   const getIcon = (type: string) => {
     switch (type) {
       case 'guide': return BookOpen;
       case 'template': return FileText;
       case 'video': return Video;
+      case 'webinar': return Play;
       case 'tool': return Calculator;
+      case 'checklist': return CheckCircle;
+      case 'ebook': return BookOpen;
       default: return FileText;
     }
   };
 
-  const Icon = getIcon(resource.type);
+  const Icon = getIcon(resource.resource_type);
+
+  const handleDownload = async () => {
+    if (resource.external_link) {
+      window.open(resource.external_link, '_blank');
+      return;
+    }
+    
+    if (!resource.file_url) {
+      toast({
+        title: "No file available",
+        description: "This resource doesn't have a downloadable file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/resources/${resource.id}/download`);
+      if (response.ok) {
+        // If it's a redirect, let the browser handle it
+        if (response.redirected) {
+          window.location.href = response.url;
+        } else {
+          // For direct file downloads
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${resource.title.replace(/[^a-zA-Z0-9]/g, '_')}.${resource.file_url.split('.').pop()}`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }
+        
+        toast({
+          title: "Download started",
+          description: `Downloading ${resource.title}`,
+        });
+      } else {
+        toast({
+          title: "Download failed",
+          description: "Could not download the resource file.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download error",
+        description: "An error occurred while downloading the file.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -35,12 +119,14 @@ const ResourceCard = ({ resource, index }: { resource: any; index: number }) => 
       <Card className="ktu-card animate-card-lift h-full group cursor-pointer">
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-4">
-            <div className={`p-3 rounded-full ${resource.featured ? 'ktu-orange-gradient' : 'bg-ktu-light-blue'}`}>
-              <Icon className={`h-6 w-6 ${resource.featured ? 'text-white' : 'text-ktu-deep-blue'}`} />
+            <div className="p-3 rounded-full bg-ktu-light-blue">
+              <Icon className="h-6 w-6 text-ktu-deep-blue" />
             </div>
-            {resource.featured && (
-              <Badge className="bg-ktu-orange text-white">Featured</Badge>
-            )}
+            <Badge className={`${resource.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' : 
+              resource.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-red-100 text-red-800'}`}>
+              {resource.difficulty_level}
+            </Badge>
           </div>
           
           <h3 className="font-semibold text-ktu-deep-blue mb-2 group-hover:text-ktu-orange transition-colors">
@@ -50,30 +136,50 @@ const ResourceCard = ({ resource, index }: { resource: any; index: number }) => 
             {resource.description}
           </p>
           
-          <div className="flex items-center justify-between text-xs text-ktu-dark-grey mb-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-4 text-xs text-ktu-dark-grey">
               <div className="flex items-center">
                 <Eye className="h-3 w-3 mr-1" />
-                <span>{resource.views}</span>
+                {resource.views || 0}
               </div>
               <div className="flex items-center">
-                <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                <span>{resource.rating}</span>
+                <Download className="h-3 w-3 mr-1" />
+                {resource.downloads || 0}
               </div>
-              <div className="flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                <span>{resource.duration}</span>
-              </div>
+              {resource.estimated_time && (
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {resource.estimated_time}
+                </div>
+              )}
             </div>
           </div>
           
           <div className="flex items-center justify-between">
-            <Badge variant="outline" className="text-ktu-deep-blue border-ktu-light-blue">
-              {resource.category}
-            </Badge>
-            <Button size="sm" className="bg-ktu-orange hover:bg-ktu-orange-light">
-              {resource.type === 'video' ? 'Watch' : resource.type === 'tool' ? 'Use Tool' : 'Read'}
-              <ExternalLink className="h-3 w-3 ml-1" />
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-ktu-orange border-ktu-orange text-xs">
+                {resource.category.replace('-', ' ')}
+              </Badge>
+              <Badge variant="outline" className="text-ktu-deep-blue border-ktu-deep-blue text-xs">
+                {resource.resource_type}
+              </Badge>
+            </div>
+            <Button 
+              size="sm" 
+              className="bg-ktu-orange hover:bg-ktu-orange-light"
+              onClick={handleDownload}
+            >
+              {resource.external_link ? (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  View
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
@@ -110,144 +216,73 @@ export default function BusinessResources() {
   const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch real resources from database
+  const { data: resources = [], isLoading, isError } = useQuery({
+    queryKey: ['/api/resources'],
+    queryFn: async () => {
+      const response = await fetch('/api/resources');
+      if (!response.ok) {
+        throw new Error('Failed to fetch resources');
+      }
+      return response.json();
+    }
+  });
+
+  // Categories with real resource counts
+  const categoryCounts = resources.reduce((acc: Record<string, number>, resource: Resource) => {
+    acc[resource.category] = (acc[resource.category] || 0) + 1;
+    return acc;
+  }, {});
+
   const categories = [
     {
       name: "Business Planning",
+      key: "business-plan",
       description: "Create solid foundations for your venture",
       icon: Target,
-      resourceCount: 12
+      resourceCount: categoryCounts['business-plan'] || 0
     },
     {
-      name: "Financial Management",
+      name: "Financial Management", 
+      key: "finance",
       description: "Master budgeting and financial planning",
       icon: PieChart,
-      resourceCount: 8
+      resourceCount: categoryCounts['finance'] || 0
     },
     {
       name: "Marketing & Sales",
+      key: "marketing",
       description: "Grow your customer base effectively",
       icon: TrendingUp,
-      resourceCount: 15
+      resourceCount: categoryCounts['marketing'] || 0
     },
     {
       name: "Legal & Compliance",
+      key: "legal",
       description: "Navigate regulations and requirements",
       icon: CheckCircle,
-      resourceCount: 6
+      resourceCount: categoryCounts['legal'] || 0
     },
     {
-      name: "Digital Tools",
+      name: "Technology & Digital Tools",
+      key: "technology",
       description: "Leverage technology for growth",
       icon: Calculator,
-      resourceCount: 10
+      resourceCount: categoryCounts['technology'] || 0
     },
     {
-      name: "Networking",
-      description: "Build valuable connections",
+      name: "Personal Development",
+      key: "personal-development",
+      description: "Build leadership and personal skills",
       icon: Users,
-      resourceCount: 7
-    }
-  ];
-
-  const resources = [
-    {
-      id: 1,
-      title: "KTU Student Business Plan Template",
-      description: "Comprehensive business plan template specifically designed for KTU student entrepreneurs, including market analysis sections for the local economy.",
-      type: "template",
-      category: "Business Planning",
-      rating: 4.9,
-      views: 1247,
-      duration: "30 min read",
-      featured: true
+      resourceCount: categoryCounts['personal-development'] || 0
     },
     {
-      id: 2,
-      title: "Financial Planning for Students",
-      description: "Learn how to manage finances as a student entrepreneur, including budgeting, cash flow management, and securing funding.",
-      type: "guide",
-      category: "Financial Management",
-      rating: 4.7,
-      views: 892,
-      duration: "45 min read",
-      featured: true
-    },
-    {
-      id: 3,
-      title: "Social Media Marketing Masterclass",
-      description: "Complete video series on building your brand presence on social media platforms popular in Ghana.",
-      type: "video",
-      category: "Marketing & Sales",
-      rating: 4.8,
-      views: 2134,
-      duration: "2.5 hours",
-      featured: true
-    },
-    {
-      id: 4,
-      title: "Business Registration in Ghana",
-      description: "Step-by-step guide to registering your business in Ghana, including all required documents and procedures.",
-      type: "guide",
-      category: "Legal & Compliance",
-      rating: 4.6,
-      views: 743,
-      duration: "25 min read",
-      featured: false
-    },
-    {
-      id: 5,
-      title: "Customer Survey Template",
-      description: "Ready-to-use customer survey templates to understand your target market and improve your products.",
-      type: "template",
-      category: "Marketing & Sales",
-      rating: 4.5,
-      views: 567,
-      duration: "15 min setup",
-      featured: false
-    },
-    {
-      id: 6,
-      title: "Profit Margin Calculator",
-      description: "Interactive tool to calculate profit margins, break-even points, and pricing strategies for your products.",
-      type: "tool",
-      category: "Financial Management",
-      rating: 4.8,
-      views: 1089,
-      duration: "5 min use",
-      featured: false
-    },
-    {
-      id: 7,
-      title: "Networking Events Calendar",
-      description: "Stay updated with KTU and regional business networking events, workshops, and entrepreneurship meetups.",
-      type: "tool",
-      category: "Networking",
-      rating: 4.4,
-      views: 445,
-      duration: "Ongoing",
-      featured: false
-    },
-    {
-      id: 8,
-      title: "E-commerce Setup Guide",
-      description: "Complete guide to setting up your online store, from choosing platforms to payment integration.",
-      type: "guide",
-      category: "Digital Tools",
-      rating: 4.7,
-      views: 823,
-      duration: "1 hour read",
-      featured: false
-    },
-    {
-      id: 9,
-      title: "Pitch Deck Template",
-      description: "Professional pitch deck template for presenting your business idea to investors and stakeholders.",
-      type: "template",
-      category: "Business Planning",
-      rating: 4.6,
-      views: 934,
-      duration: "20 min customize",
-      featured: false
+      name: "Operations",
+      key: "operations", 
+      description: "Streamline business operations",
+      icon: Briefcase,
+      resourceCount: categoryCounts['operations'] || 0
     }
   ];
 
@@ -256,23 +291,56 @@ export default function BusinessResources() {
     { value: 'guide', label: 'Guides' },
     { value: 'template', label: 'Templates' },
     { value: 'video', label: 'Videos' },
-    { value: 'tool', label: 'Tools' }
+    { value: 'webinar', label: 'Webinars' },
+    { value: 'tool', label: 'Tools' },
+    { value: 'checklist', label: 'Checklists' },
+    { value: 'ebook', label: 'eBooks' }
   ];
 
   const categoryOptions = [
     { value: 'all', label: 'All Categories' },
-    ...categories.map(cat => ({ value: cat.name, label: cat.name }))
+    ...categories.map(cat => ({ value: cat.key, label: cat.name }))
   ];
 
-  const filteredResources = resources.filter(resource => {
+  // Filter resources based on current selections
+  const filteredResources = resources.filter((resource: Resource) => {
     const matchesSearch = resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         resource.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         resource.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || resource.category === selectedCategory;
-    const matchesType = selectedType === 'all' || resource.type === selectedType;
+    const matchesType = selectedType === 'all' || resource.resource_type === selectedType;
     return matchesSearch && matchesCategory && matchesType;
   });
 
-  const featuredResources = resources.filter(r => r.featured);
+  // Get statistics for hero section
+  const resourceStats = {
+    totalGuides: resources.filter((r: Resource) => r.resource_type === 'guide').length,
+    totalTemplates: resources.filter((r: Resource) => r.resource_type === 'template').length,
+    totalVideos: resources.filter((r: Resource) => r.resource_type === 'video' || r.resource_type === 'webinar').length,
+    totalTools: resources.filter((r: Resource) => r.resource_type === 'tool').length,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-ktu-grey flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ktu-orange"></div>
+          <p className="mt-4 text-ktu-deep-blue">Loading resources...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-ktu-grey flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-ktu-deep-blue mb-4">Error Loading Resources</h2>
+          <p className="text-ktu-dark-grey">Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-ktu-grey">
@@ -303,10 +371,10 @@ export default function BusinessResources() {
               className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
             >
               {[
-                { label: "Guides", value: "25+", icon: BookOpen },
-                { label: "Templates", value: "15+", icon: FileText },
-                { label: "Video Courses", value: "10+", icon: Video },
-                { label: "Business Tools", value: "8+", icon: Calculator }
+                { label: "Guides", value: `${resourceStats.totalGuides}+`, icon: BookOpen },
+                { label: "Templates", value: `${resourceStats.totalTemplates}+`, icon: FileText },
+                { label: "Video Courses", value: `${resourceStats.totalVideos}+`, icon: Video },
+                { label: "Business Tools", value: `${resourceStats.totalTools}+`, icon: Calculator }
               ].map((stat, index) => (
                 <div key={stat.label} className="text-center">
                   <stat.icon className="h-8 w-8 mx-auto mb-2 text-ktu-orange" />
@@ -333,27 +401,7 @@ export default function BusinessResources() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category, index) => (
-              <CategoryCard key={category.name} category={category} index={index} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Resources */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-ktu-deep-blue mb-4">
-              Featured Resources
-            </h2>
-            <p className="text-ktu-dark-grey max-w-2xl mx-auto">
-              Hand-picked resources to help you succeed as a KTU student entrepreneur
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredResources.map((resource, index) => (
-              <ResourceCard key={resource.id} resource={resource} index={index} />
+              <CategoryCard key={category.key} category={category} index={index} />
             ))}
           </div>
         </div>
@@ -362,7 +410,7 @@ export default function BusinessResources() {
       {/* All Resources */}
       <section className="container mx-auto px-4 py-12">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-ktu-deep-blue mb-6">All Resources</h2>
+          <h2 className="text-2xl font-bold text-ktu-deep-blue mb-6">All Resources ({filteredResources.length})</h2>
           
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -420,7 +468,7 @@ export default function BusinessResources() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResources.map((resource, index) => (
+            {filteredResources.map((resource: Resource, index: number) => (
               <ResourceCard key={resource.id} resource={resource} index={index} />
             ))}
           </div>

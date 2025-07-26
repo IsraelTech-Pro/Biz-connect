@@ -2401,8 +2401,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public resource endpoints for students
+  app.get('/api/resources', async (req, res) => {
+    try {
+      const resources = await storage.getResources();
+      // Only return published resources for public access
+      const publishedResources = resources.filter(r => r.status === 'published');
+      res.json(publishedResources);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      res.status(500).json({ message: 'Failed to fetch resources' });
+    }
+  });
+
+  app.get('/api/resources/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await storage.getResource(id);
+      if (!resource || resource.status !== 'published') {
+        return res.status(404).json({ message: 'Resource not found' });
+      }
+      
+      // Increment view count
+      await storage.updateResource(id, { views: (resource.views || 0) + 1 });
+      
+      res.json(resource);
+    } catch (error) {
+      console.error('Error fetching resource:', error);
+      res.status(500).json({ message: 'Failed to fetch resource' });
+    }
+  });
+
+  // Resource download endpoint
+  app.get('/api/resources/:id/download', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const resource = await storage.getResource(id);
+      
+      if (!resource || resource.status !== 'published' || !resource.file_url) {
+        return res.status(404).json({ message: 'Resource file not found' });
+      }
+      
+      // Increment download count
+      await storage.updateResource(id, { downloads: (resource.downloads || 0) + 1 });
+      
+      // Check if it's a local file or external URL
+      if (resource.file_url.startsWith('/uploads/')) {
+        // Local file download
+        const filePath = path.join(process.cwd(), resource.file_url);
+        if (fs.existsSync(filePath)) {
+          const fileName = `${resource.title.replace(/[^a-zA-Z0-9]/g, '_')}_${path.basename(resource.file_url)}`;
+          res.download(filePath, fileName);
+        } else {
+          res.status(404).json({ message: 'File not found on server' });
+        }
+      } else {
+        // External file URL - redirect to the external URL
+        res.redirect(resource.file_url);
+      }
+    } catch (error) {
+      console.error('Error downloading resource:', error);
+      res.status(500).json({ message: 'Failed to download resource' });
+    }
+  });
+
   // Admin endpoints for resources with full CRUD
-  app.get('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/resources', authenticateAdminToken, async (req, res) => {
     try {
       const resources = await storage.getResources();
       res.json(resources);
@@ -2412,12 +2476,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/resources', authenticateToken, requireAdmin, async (req, res) => {
+  app.post('/api/admin/resources', authenticateAdminToken, async (req, res) => {
     try {
-      const resourceData = {
-        ...req.body,
-        created_by: req.user?.id
-      };
+      const resourceData = { ...req.body };
+      
+      // Convert numeric fields if they're strings
+      if (resourceData.views && typeof resourceData.views === 'string') {
+        resourceData.views = parseInt(resourceData.views) || 0;
+      }
+      if (resourceData.downloads && typeof resourceData.downloads === 'string') {
+        resourceData.downloads = parseInt(resourceData.downloads) || 0;
+      }
+      
       const resource = await storage.createResource(resourceData);
       res.json(resource);
     } catch (error) {
@@ -2426,7 +2496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.get('/api/admin/resources/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const resource = await storage.getResource(id);
@@ -2440,7 +2510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.put('/api/admin/resources/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -2452,7 +2522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/admin/resources/:id', authenticateToken, requireAdmin, async (req, res) => {
+  app.delete('/api/admin/resources/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteResource(id);
