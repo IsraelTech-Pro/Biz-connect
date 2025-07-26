@@ -5,7 +5,7 @@ import {
   GraduationCap, Star, Calendar, Clock, Users, MapPin,
   MessageCircle, Video, Phone, Mail, Award, BookOpen,
   TrendingUp, Target, Search, Filter, Plus, CheckCircle,
-  ArrowRight, User, Building, Briefcase
+  ArrowRight, User, Building, Briefcase, Trophy
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
