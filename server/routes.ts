@@ -798,33 +798,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes
-  app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
-    try {
-      const stats = await storage.getPlatformStats();
-      res.json(stats);
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to get platform stats' });
-    }
-  });
+  // Admin routes - moved to dedicated admin endpoints below
 
-  app.get('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
-    try {
-      const settings = await storage.getPlatformSettings();
-      res.json(settings);
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to get platform settings' });
-    }
-  });
-
-  app.put('/api/admin/settings', authenticateToken, requireAdmin, async (req, res) => {
-    try {
-      const settings = await storage.updatePlatformSettings(req.body);
-      res.json(settings);
-    } catch (error) {
-      res.status(400).json({ message: 'Failed to update platform settings' });
-    }
-  });
+  // Admin settings moved to dedicated admin endpoints below
 
   // Paystack public key endpoint
   app.get('/api/paystack/public-key', (req, res) => {
@@ -2291,7 +2267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
+  app.put('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -2350,7 +2326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
+  app.put('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
