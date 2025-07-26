@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,9 +55,21 @@ const MentorForm = ({ mentor, onClose, onSuccess }: {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/mentors', { method: 'POST', body: data }),
+    mutationFn: async (data: any) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/mentors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create mentor');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/mentors'] });
       toast({ title: 'Success', description: 'Mentor created successfully' });
       onSuccess();
     },
@@ -67,9 +79,21 @@ const MentorForm = ({ mentor, onClose, onSuccess }: {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/admin/mentors/${mentor.id}`, { method: 'PUT', body: data }),
+    mutationFn: async (data: any) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/mentors/${mentor.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update mentor');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/mentors'] });
       toast({ title: 'Success', description: 'Mentor updated successfully' });
       onSuccess();
     },
@@ -257,13 +281,33 @@ const ProgramForm = ({ program, onClose, onSuccess }: {
 
   // Fetch mentors for dropdown
   const { data: mentors = [] } = useQuery({
-    queryKey: ['/api/mentors'],
+    queryKey: ['/api/admin/mentors'],
+    queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/mentors', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch mentors');
+      return response.json();
+    },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/admin/programs', { method: 'POST', body: data }),
+    mutationFn: async (data: any) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/programs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create program');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/programs'] });
       toast({ title: 'Success', description: 'Program created successfully' });
       onSuccess();
     },
@@ -273,9 +317,21 @@ const ProgramForm = ({ program, onClose, onSuccess }: {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiRequest(`/api/admin/programs/${program.id}`, { method: 'PUT', body: data }),
+    mutationFn: async (data: any) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/programs/${program.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update program');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/programs'] });
       toast({ title: 'Success', description: 'Program updated successfully' });
       onSuccess();
     },
@@ -457,19 +513,43 @@ export default function AdminMentorship() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch mentors and programs
+  // Fetch mentors and programs with admin auth
   const { data: mentors = [], isLoading: mentorsLoading } = useQuery({
-    queryKey: ['/api/mentors'],
+    queryKey: ['/api/admin/mentors'],
+    queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/mentors', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch mentors');
+      return response.json();
+    },
   });
 
   const { data: programs = [], isLoading: programsLoading } = useQuery({
-    queryKey: ['/api/programs'],
+    queryKey: ['/api/admin/programs'],
+    queryFn: async () => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/programs', {
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to fetch programs');
+      return response.json();
+    },
   });
 
   const deleteMentorMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/admin/mentors/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: string) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/mentors/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete mentor');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/mentors'] });
       toast({ title: 'Success', description: 'Mentor deleted successfully' });
     },
     onError: () => {
@@ -478,9 +558,17 @@ export default function AdminMentorship() {
   });
 
   const deleteProgramMutation = useMutation({
-    mutationFn: (id: string) => apiRequest(`/api/admin/programs/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: string) => {
+      const adminToken = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/programs/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminToken}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete program');
+      return response.json();
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/programs'] });
       toast({ title: 'Success', description: 'Program deleted successfully' });
     },
     onError: () => {
@@ -546,6 +634,9 @@ export default function AdminMentorship() {
                     <DialogTitle>
                       {editingMentor ? 'Edit Mentor' : 'Add New Mentor'}
                     </DialogTitle>
+                    <DialogDescription>
+                      {editingMentor ? 'Update mentor information and settings' : 'Add a new mentor to the KTU BizConnect platform'}
+                    </DialogDescription>
                   </DialogHeader>
                   <MentorForm
                     mentor={editingMentor}
@@ -651,6 +742,9 @@ export default function AdminMentorship() {
                     <DialogTitle>
                       {editingProgram ? 'Edit Program' : 'Add New Program'}
                     </DialogTitle>
+                    <DialogDescription>
+                      {editingProgram ? 'Update program details and configuration' : 'Create a new mentorship program for KTU students'}
+                    </DialogDescription>
                   </DialogHeader>
                   <ProgramForm
                     program={editingProgram}
