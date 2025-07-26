@@ -127,6 +127,8 @@ export interface IStorage {
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: string, resource: Partial<InsertResource>): Promise<Resource>;
   deleteResource(id: string): Promise<void>;
+  incrementResourceViews(id: string): Promise<void>;
+  incrementResourceDownloads(id: string): Promise<void>;
 
   // Admin authentication methods
   getAdminUsers(): Promise<AdminUser[]>;
@@ -616,6 +618,20 @@ export class PostgresStorage implements IStorage {
   async deleteResource(id: string): Promise<void> {
     if (!db) throw new Error('Database not available');
     await db.delete(resources).where(eq(resources.id, id));
+  }
+
+  async incrementResourceViews(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.update(resources)
+      .set({ views: sql`${resources.views} + 1` })
+      .where(eq(resources.id, id));
+  }
+
+  async incrementResourceDownloads(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.update(resources)
+      .set({ downloads: sql`${resources.downloads} + 1` })
+      .where(eq(resources.id, id));
   }
 
   // Admin authentication methods

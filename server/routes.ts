@@ -2422,9 +2422,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Resource not found' });
       }
       
-      // Increment view count
-      await storage.updateResource(id, { views: (resource.views || 0) + 1 });
-      
       res.json(resource);
     } catch (error) {
       console.error('Error fetching resource:', error);
@@ -2432,38 +2429,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Resource download endpoint
-  app.get('/api/resources/:id/download', async (req, res) => {
+  // Track resource view
+  app.post('/api/resources/:id/view', async (req, res) => {
     try {
       const { id } = req.params;
       const resource = await storage.getResource(id);
-      
-      if (!resource || resource.status !== 'published' || !resource.file_url) {
-        return res.status(404).json({ message: 'Resource file not found' });
+      if (!resource || resource.status !== 'published') {
+        return res.status(404).json({ message: 'Resource not found' });
       }
       
-      // Increment download count
-      await storage.updateResource(id, { downloads: (resource.downloads || 0) + 1 });
-      
-      // Check if it's a local file or external URL
-      if (resource.file_url.startsWith('/uploads/')) {
-        // Local file download
-        const filePath = path.join(process.cwd(), resource.file_url);
-        if (fs.existsSync(filePath)) {
-          const fileName = `${resource.title.replace(/[^a-zA-Z0-9]/g, '_')}_${path.basename(resource.file_url)}`;
-          res.download(filePath, fileName);
-        } else {
-          res.status(404).json({ message: 'File not found on server' });
-        }
-      } else {
-        // External file URL - redirect to the external URL
-        res.redirect(resource.file_url);
-      }
+      await storage.incrementResourceViews(id);
+      res.json({ message: 'View tracked successfully' });
     } catch (error) {
-      console.error('Error downloading resource:', error);
-      res.status(500).json({ message: 'Failed to download resource' });
+      console.error('Error tracking resource view:', error);
+      res.status(500).json({ message: 'Failed to track view' });
     }
   });
+
+  // Track resource download
+  app.post('/api/resources/:id/download', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { fileUrl } = req.body;
+      const resource = await storage.getResource(id);
+      if (!resource || resource.status !== 'published') {
+        return res.status(404).json({ message: 'Resource not found' });
+      }
+      
+      await storage.incrementResourceDownloads(id);
+      res.json({ message: 'Download tracked successfully' });
+    } catch (error) {
+      console.error('Error tracking resource download:', error);
+      res.status(500).json({ message: 'Failed to track download' });
+    }
+  });
+
+
 
   // Admin endpoints for resources with full CRUD
   app.get('/api/admin/resources', authenticateAdminToken, async (req, res) => {

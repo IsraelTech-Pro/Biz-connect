@@ -22,6 +22,7 @@ import VendorDetail from "@/pages/vendor-detail";
 import Businesses from "@/pages/businesses";
 import ProductsListing from "@/pages/products-listing";
 import BusinessResources from "./pages/business-resources";
+import ResourceDetail from "./pages/resource-detail";
 import CommunityForum from "./pages/community-forum";
 import MentorshipHub from "./pages/mentorship-hub";
 
@@ -86,6 +87,7 @@ function Router() {
       <Route path="/businesses" component={Businesses} />
       <Route path="/mentorship" component={MentorshipHub} />
       <Route path="/resources" component={BusinessResources} />
+      <Route path="/resources/:id" component={ResourceDetail} />
       <Route path="/community" component={CommunityForum} />
       <Route path="/products" component={ProductsListing} />
       <Route path="/products-listing" component={ProductsListing} />

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { 
   BookOpen, FileText, Video, Download, ExternalLink, 
   Search, Filter, Star, Clock, Eye, Users,
   TrendingUp, Calculator, Lightbulb, Target,
   Briefcase, PieChart, Calendar, CheckCircle,
-  FileDown, Play, Wrench
+  FileDown, Play, Wrench, ArrowRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,19 @@ import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 
 // Types from backend schema
+interface ResourceFile {
+  name: string;
+  url: string;
+  size?: string;
+  type?: string;
+}
+
+interface ResourceLink {
+  name: string;
+  url: string;
+  description?: string;
+}
+
 interface Resource {
   id: string;
   title: string;
@@ -24,22 +38,21 @@ interface Resource {
   content: string;
   category: string;
   resource_type: string;
-  file_url?: string;
-  external_link?: string;
+  files: ResourceFile[];
+  external_links: ResourceLink[];
   tags: string[];
   difficulty_level: string;
   estimated_time?: string;
   status: string;
   views: number;
   downloads: number;
+  thumbnail_url?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
 }
 
 const ResourceCard = ({ resource, index }: { resource: Resource; index: number }) => {
-  const { toast } = useToast();
-  
   const getIcon = (type: string) => {
     switch (type) {
       case 'guide': return BookOpen;
@@ -54,61 +67,8 @@ const ResourceCard = ({ resource, index }: { resource: Resource; index: number }
   };
 
   const Icon = getIcon(resource.resource_type);
-
-  const handleDownload = async () => {
-    if (resource.external_link) {
-      window.open(resource.external_link, '_blank');
-      return;
-    }
-    
-    if (!resource.file_url) {
-      toast({
-        title: "No file available",
-        description: "This resource doesn't have a downloadable file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/resources/${resource.id}/download`);
-      if (response.ok) {
-        // If it's a redirect, let the browser handle it
-        if (response.redirected) {
-          window.location.href = response.url;
-        } else {
-          // For direct file downloads
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${resource.title.replace(/[^a-zA-Z0-9]/g, '_')}.${resource.file_url.split('.').pop()}`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }
-        
-        toast({
-          title: "Download started",
-          description: `Downloading ${resource.title}`,
-        });
-      } else {
-        toast({
-          title: "Download failed",
-          description: "Could not download the resource file.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: "Download error",
-        description: "An error occurred while downloading the file.",
-        variant: "destructive",
-      });
-    }
-  };
+  const fileCount = resource.files?.length || 0;
+  const linkCount = resource.external_links?.length || 0;
 
   return (
     <motion.div
@@ -116,74 +76,79 @@ const ResourceCard = ({ resource, index }: { resource: Resource; index: number }
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="ktu-card animate-card-lift h-full group cursor-pointer">
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="p-3 rounded-full bg-ktu-light-blue">
-              <Icon className="h-6 w-6 text-ktu-deep-blue" />
+      <Link href={`/resources/${resource.id}`}>
+        <Card className="ktu-card animate-card-lift h-full group cursor-pointer hover:shadow-lg transition-all">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-3 rounded-full bg-ktu-light-blue">
+                <Icon className="h-6 w-6 text-ktu-deep-blue" />
+              </div>
+              <Badge className={`${resource.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' : 
+                resource.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' : 
+                'bg-red-100 text-red-800'}`}>
+                {resource.difficulty_level}
+              </Badge>
             </div>
-            <Badge className={`${resource.difficulty_level === 'beginner' ? 'bg-green-100 text-green-800' : 
-              resource.difficulty_level === 'intermediate' ? 'bg-yellow-100 text-yellow-800' : 
-              'bg-red-100 text-red-800'}`}>
-              {resource.difficulty_level}
-            </Badge>
-          </div>
-          
-          <h3 className="font-semibold text-ktu-deep-blue mb-2 group-hover:text-ktu-orange transition-colors">
-            {resource.title}
-          </h3>
-          <p className="text-sm text-ktu-dark-grey mb-4 line-clamp-3">
-            {resource.description}
-          </p>
-          
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4 text-xs text-ktu-dark-grey">
-              <div className="flex items-center">
-                <Eye className="h-3 w-3 mr-1" />
-                {resource.views || 0}
-              </div>
-              <div className="flex items-center">
-                <Download className="h-3 w-3 mr-1" />
-                {resource.downloads || 0}
-              </div>
-              {resource.estimated_time && (
+            
+            <h3 className="font-semibold text-ktu-deep-blue mb-2 group-hover:text-ktu-orange transition-colors">
+              {resource.title}
+            </h3>
+            <p className="text-sm text-ktu-dark-grey mb-4 line-clamp-3">
+              {resource.description}
+            </p>
+            
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4 text-xs text-ktu-dark-grey">
                 <div className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {resource.estimated_time}
+                  <Eye className="h-3 w-3 mr-1" />
+                  {resource.views || 0}
+                </div>
+                <div className="flex items-center">
+                  <Download className="h-3 w-3 mr-1" />
+                  {resource.downloads || 0}
+                </div>
+                {resource.estimated_time && (
+                  <div className="flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {resource.estimated_time}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Files and Links Count */}
+            <div className="flex items-center space-x-4 mb-4 text-xs text-ktu-dark-grey">
+              {fileCount > 0 && (
+                <div className="flex items-center">
+                  <FileText className="h-3 w-3 mr-1" />
+                  {fileCount} file{fileCount !== 1 ? 's' : ''}
+                </div>
+              )}
+              {linkCount > 0 && (
+                <div className="flex items-center">
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  {linkCount} link{linkCount !== 1 ? 's' : ''}
                 </div>
               )}
             </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap gap-1">
-              <Badge variant="outline" className="text-ktu-orange border-ktu-orange text-xs">
-                {resource.category.replace('-', ' ')}
-              </Badge>
-              <Badge variant="outline" className="text-ktu-deep-blue border-ktu-deep-blue text-xs">
-                {resource.resource_type}
-              </Badge>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-1">
+                <Badge variant="outline" className="text-ktu-orange border-ktu-orange text-xs">
+                  {resource.category.replace('-', ' ')}
+                </Badge>
+                <Badge variant="outline" className="text-ktu-deep-blue border-ktu-deep-blue text-xs">
+                  {resource.resource_type}
+                </Badge>
+              </div>
+              <div className="flex items-center text-ktu-orange text-sm font-medium group-hover:text-ktu-deep-blue transition-colors">
+                View Details
+                <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              </div>
             </div>
-            <Button 
-              size="sm" 
-              className="bg-ktu-orange hover:bg-ktu-orange-light"
-              onClick={handleDownload}
-            >
-              {resource.external_link ? (
-                <>
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  View
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-1" />
-                  Download
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </Link>
     </motion.div>
   );
 };

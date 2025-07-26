@@ -276,14 +276,15 @@ export const resources = pgTable("resources", {
   content: text("content").notNull(),
   category: text("category").notNull().default("business-plan"), // business-plan, marketing, finance, legal, operations, technology, personal-development
   resource_type: text("resource_type").notNull().default("guide"), // guide, template, checklist, video, webinar, ebook, tool
-  file_url: text("file_url"),
-  external_link: text("external_link"),
+  files: jsonb("files").default([]), // Array of {name, url, size, type}
+  external_links: jsonb("external_links").default([]), // Array of {name, url, description}
   tags: text("tags").array().default([]),
   difficulty_level: text("difficulty_level").notNull().default("beginner"), // beginner, intermediate, advanced
   estimated_time: text("estimated_time"),
   status: text("status").notNull().default("published"), // published, draft, archived
   views: integer("views").default(0),
   downloads: integer("downloads").default(0),
+  thumbnail_url: text("thumbnail_url"), // Preview image for the resource
   created_by: uuid("created_by").references(() => users.id),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
