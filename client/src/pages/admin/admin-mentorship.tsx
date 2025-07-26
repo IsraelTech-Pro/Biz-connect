@@ -39,6 +39,7 @@ const MentorForm = ({ mentor, onClose, onSuccess }: {
     full_name: mentor?.full_name || '',
     email: mentor?.email || '',
     phone: mentor?.phone || '',
+    whatsapp_number: mentor?.whatsapp_number || '',
     company: mentor?.company || '',
     position: mentor?.position || '',
     expertise: mentor?.expertise || '',
@@ -49,6 +50,13 @@ const MentorForm = ({ mentor, onClose, onSuccess }: {
     status: mentor?.status || 'active',
     profile_image: mentor?.profile_image || '',
     linkedin_url: mentor?.linkedin_url || '',
+    twitter_url: mentor?.twitter_url || '',
+    facebook_url: mentor?.facebook_url || '',
+    instagram_url: mentor?.instagram_url || '',
+    website_url: mentor?.website_url || '',
+    office_address: mentor?.office_address || '',
+    consultation_fee: mentor?.consultation_fee || '',
+    languages_spoken: mentor?.languages_spoken || '',
   });
 
   const { toast } = useToast();
@@ -230,12 +238,86 @@ const MentorForm = ({ mentor, onClose, onSuccess }: {
           />
         </div>
         <div>
+          <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+          <Input
+            id="whatsapp_number"
+            value={formData.whatsapp_number}
+            onChange={(e) => handleChange('whatsapp_number', e.target.value)}
+            placeholder="+233244123456"
+          />
+        </div>
+        <div>
+          <Label htmlFor="consultation_fee">Consultation Fee (₵)</Label>
+          <Input
+            id="consultation_fee"
+            type="number"
+            step="0.01"
+            value={formData.consultation_fee}
+            onChange={(e) => handleChange('consultation_fee', e.target.value)}
+            placeholder="150.00"
+          />
+        </div>
+        <div>
+          <Label htmlFor="languages_spoken">Languages Spoken</Label>
+          <Input
+            id="languages_spoken"
+            value={formData.languages_spoken}
+            onChange={(e) => handleChange('languages_spoken', e.target.value)}
+            placeholder="English, Twi, Ga"
+          />
+        </div>
+        <div>
+          <Label htmlFor="office_address">Office Address</Label>
+          <Input
+            id="office_address"
+            value={formData.office_address}
+            onChange={(e) => handleChange('office_address', e.target.value)}
+            placeholder="123 Main Street, Koforidua"
+          />
+        </div>
+        <div>
           <Label htmlFor="linkedin_url">LinkedIn URL</Label>
           <Input
             id="linkedin_url"
             value={formData.linkedin_url}
             onChange={(e) => handleChange('linkedin_url', e.target.value)}
             placeholder="https://linkedin.com/in/username"
+          />
+        </div>
+        <div>
+          <Label htmlFor="twitter_url">Twitter URL</Label>
+          <Input
+            id="twitter_url"
+            value={formData.twitter_url}
+            onChange={(e) => handleChange('twitter_url', e.target.value)}
+            placeholder="https://twitter.com/username"
+          />
+        </div>
+        <div>
+          <Label htmlFor="facebook_url">Facebook URL</Label>
+          <Input
+            id="facebook_url"
+            value={formData.facebook_url}
+            onChange={(e) => handleChange('facebook_url', e.target.value)}
+            placeholder="https://facebook.com/username"
+          />
+        </div>
+        <div>
+          <Label htmlFor="instagram_url">Instagram URL</Label>
+          <Input
+            id="instagram_url"
+            value={formData.instagram_url}
+            onChange={(e) => handleChange('instagram_url', e.target.value)}
+            placeholder="https://instagram.com/username"
+          />
+        </div>
+        <div>
+          <Label htmlFor="website_url">Website URL</Label>
+          <Input
+            id="website_url"
+            value={formData.website_url}
+            onChange={(e) => handleChange('website_url', e.target.value)}
+            placeholder="https://yourwebsite.com"
           />
         </div>
       </div>
@@ -274,6 +356,12 @@ const ProgramForm = ({ program, onClose, onSuccess }: {
     outcomes: program?.outcomes || '',
     status: program?.status || 'upcoming',
     mentor_id: program?.mentor_id || '',
+    location_type: program?.location_type || 'online',
+    location_address: program?.location_address || '',
+    platform_link: program?.platform_link || '',
+    whatsapp_support: program?.whatsapp_support || '',
+    call_support: program?.call_support || '',
+    program_fee: program?.program_fee || '',
   });
 
   const { toast } = useToast();
@@ -465,6 +553,66 @@ const ProgramForm = ({ program, onClose, onSuccess }: {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <Label htmlFor="location_type">Location Type</Label>
+          <Select value={formData.location_type} onValueChange={(value) => handleChange('location_type', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="physical">Physical</SelectItem>
+              <SelectItem value="hybrid">Hybrid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="location_address">Location Address</Label>
+          <Input
+            id="location_address"
+            value={formData.location_address}
+            onChange={(e) => handleChange('location_address', e.target.value)}
+            placeholder="KTU Campus, Koforidua"
+          />
+        </div>
+        <div>
+          <Label htmlFor="platform_link">Platform Link (Zoom/Meet)</Label>
+          <Input
+            id="platform_link"
+            value={formData.platform_link}
+            onChange={(e) => handleChange('platform_link', e.target.value)}
+            placeholder="https://zoom.us/j/meeting-id"
+          />
+        </div>
+        <div>
+          <Label htmlFor="whatsapp_support">WhatsApp Support</Label>
+          <Input
+            id="whatsapp_support"
+            value={formData.whatsapp_support}
+            onChange={(e) => handleChange('whatsapp_support', e.target.value)}
+            placeholder="+233244567890"
+          />
+        </div>
+        <div>
+          <Label htmlFor="call_support">Call Support</Label>
+          <Input
+            id="call_support"
+            value={formData.call_support}
+            onChange={(e) => handleChange('call_support', e.target.value)}
+            placeholder="+233302123456"
+          />
+        </div>
+        <div>
+          <Label htmlFor="program_fee">Program Fee (₵)</Label>
+          <Input
+            id="program_fee"
+            type="number"
+            step="0.01"
+            value={formData.program_fee}
+            onChange={(e) => handleChange('program_fee', e.target.value)}
+            placeholder="500.00"
+          />
         </div>
         <div className="md:col-span-2">
           <Label htmlFor="requirements">Requirements</Label>

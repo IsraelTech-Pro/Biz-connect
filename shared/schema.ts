@@ -223,6 +223,7 @@ export const mentors = pgTable("mentors", {
   full_name: text("full_name").notNull(),
   email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
+  whatsapp_number: text("whatsapp_number"),
   company: text("company").notNull(),
   position: text("position").notNull(),
   expertise: text("expertise").notNull(),
@@ -234,6 +235,12 @@ export const mentors = pgTable("mentors", {
   profile_image: text("profile_image"),
   linkedin_url: text("linkedin_url"),
   twitter_url: text("twitter_url"),
+  facebook_url: text("facebook_url"),
+  instagram_url: text("instagram_url"),
+  website_url: text("website_url"),
+  office_address: text("office_address"),
+  consultation_fee: decimal("consultation_fee", { precision: 10, scale: 2 }),
+  languages_spoken: text("languages_spoken"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -252,6 +259,12 @@ export const programs = pgTable("programs", {
   status: text("status").notNull().default("active"), // active, upcoming, completed, cancelled
   participants_count: integer("participants_count").default(0),
   mentor_id: uuid("mentor_id").references(() => mentors.id),
+  location_type: text("location_type").notNull().default("online"), // online, physical, hybrid
+  location_address: text("location_address"),
+  platform_link: text("platform_link"), // Zoom, Teams, etc.
+  whatsapp_support: text("whatsapp_support"),
+  call_support: text("call_support"),
+  program_fee: decimal("program_fee", { precision: 10, scale: 2 }).default("0.00"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
