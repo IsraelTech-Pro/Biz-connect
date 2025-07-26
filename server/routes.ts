@@ -2244,7 +2244,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/mentors', authenticateAdminToken, async (req, res) => {
     try {
-      const mentorData = req.body;
+      const mentorData = { ...req.body };
+      
+      // Convert numeric fields
+      if (mentorData.years_experience && typeof mentorData.years_experience === 'string') {
+        mentorData.years_experience = parseInt(mentorData.years_experience);
+      }
+      if (mentorData.consultation_fee && typeof mentorData.consultation_fee === 'string') {
+        mentorData.consultation_fee = parseFloat(mentorData.consultation_fee);
+      }
+      
       const mentor = await storage.createMentor(mentorData);
       res.json(mentor);
     } catch (error) {
@@ -2270,7 +2279,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/mentors/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const updates = { ...req.body };
+      
+      // Convert numeric fields
+      if (updates.years_experience && typeof updates.years_experience === 'string') {
+        updates.years_experience = parseInt(updates.years_experience);
+      }
+      if (updates.consultation_fee && typeof updates.consultation_fee === 'string') {
+        updates.consultation_fee = parseFloat(updates.consultation_fee);
+      }
+      
       const mentor = await storage.updateMentor(id, updates);
       res.json(mentor);
     } catch (error) {
@@ -2303,7 +2321,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/programs', authenticateAdminToken, async (req, res) => {
     try {
-      const programData = req.body;
+      const programData = { ...req.body };
+      
+      // Convert date strings to Date objects for timestamp fields
+      if (programData.start_date && typeof programData.start_date === 'string') {
+        programData.start_date = new Date(programData.start_date);
+      }
+      if (programData.end_date && typeof programData.end_date === 'string') {
+        programData.end_date = new Date(programData.end_date);
+      }
+      
+      // Convert numeric fields
+      if (programData.max_participants && typeof programData.max_participants === 'string') {
+        programData.max_participants = parseInt(programData.max_participants);
+      }
+      if (programData.program_fee && typeof programData.program_fee === 'string') {
+        programData.program_fee = parseFloat(programData.program_fee);
+      }
+      
       const program = await storage.createProgram(programData);
       res.json(program);
     } catch (error) {
@@ -2329,7 +2364,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/admin/programs/:id', authenticateAdminToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const updates = req.body;
+      const updates = { ...req.body };
+      
+      // Convert date strings to Date objects for timestamp fields
+      if (updates.start_date && typeof updates.start_date === 'string') {
+        updates.start_date = new Date(updates.start_date);
+      }
+      if (updates.end_date && typeof updates.end_date === 'string') {
+        updates.end_date = new Date(updates.end_date);
+      }
+      
+      // Convert numeric fields
+      if (updates.max_participants && typeof updates.max_participants === 'string') {
+        updates.max_participants = parseInt(updates.max_participants);
+      }
+      if (updates.program_fee && typeof updates.program_fee === 'string') {
+        updates.program_fee = parseFloat(updates.program_fee);
+      }
+      
       const program = await storage.updateProgram(id, updates);
       res.json(program);
     } catch (error) {
