@@ -177,24 +177,183 @@ function CategoryCard({ category, index }: { category: any; index: number }) {
   );
 }
 
+// Comment Component
+function CommentSection({ discussionId }: { discussionId: string }) {
+  const [showComments, setShowComments] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Get current user
+  const regularUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
+  const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
+  const currentUser = regularUser || adminUser || {};
+
+  // Fetch comments
+  const { data: comments = [], isLoading: commentsLoading } = useQuery({
+    queryKey: [`/api/discussions/${discussionId}/comments`],
+    queryFn: async () => {
+      const response = await fetch(`/api/discussions/${discussionId}/comments`);
+      if (!response.ok) throw new Error('Failed to fetch comments');
+      return response.json();
+    },
+    enabled: showComments
+  });
+
+  // Create comment mutation
+  const createCommentMutation = useMutation({
+    mutationFn: async (commentData: { content: string }) => {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
+      const response = await fetch(`/api/discussions/${discussionId}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(commentData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create comment');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/discussions/${discussionId}/comments`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
+      setNewComment('');
+      toast({
+        title: 'Success',
+        description: 'Comment added successfully'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to add comment',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSubmitComment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    
+    if (!currentUser.id) {
+      toast({
+        title: 'Please login',
+        description: 'You need to login to comment',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    createCommentMutation.mutate({ content: newComment.trim() });
+  };
+
+  return (
+    <div className="border-t border-ktu-light-blue pt-4">
+      <Button
+        variant="ghost"
+        onClick={() => setShowComments(!showComments)}
+        className="text-ktu-dark-grey hover:text-ktu-orange mb-4"
+      >
+        <MessageSquare className="h-4 w-4 mr-2" />
+        {showComments ? 'Hide Comments' : `View Comments (${comments.length})`}
+      </Button>
+
+      {showComments && (
+        <div className="space-y-4">
+          {/* Add Comment Form */}
+          {currentUser.id && (
+            <form onSubmit={handleSubmitComment} className="space-y-3">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                className="min-h-20 border-ktu-light-blue focus:border-ktu-orange resize-none"
+              />
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-ktu-orange hover:bg-ktu-orange-light"
+                  disabled={createCommentMutation.isPending || !newComment.trim()}
+                >
+                  {createCommentMutation.isPending ? 'Posting...' : 'Post Comment'}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* Comments List */}
+          {commentsLoading ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-ktu-orange mx-auto"></div>
+            </div>
+          ) : comments.length === 0 ? (
+            <p className="text-ktu-dark-grey text-center py-4">No comments yet. Be the first to comment!</p>
+          ) : (
+            <div className="space-y-3">
+              {comments.map((comment: any) => (
+                <div key={comment.id} className="bg-ktu-grey p-3 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-ktu-orange text-white text-xs">
+                        {comment.author_name.split(' ').map((n: string) => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-ktu-deep-blue">{comment.author_name}</span>
+                    <span className="text-xs text-ktu-dark-grey">
+                      {new Date(comment.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-ktu-dark-grey">{comment.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Discussion Post Card Component
 function PostCard({ post, index }: { post: Discussion; index: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [userLikes, setUserLikes] = useState<string[]>([]);
   
-  // Get current user from localStorage
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  // Get current user from localStorage - try both regular and admin tokens
+  const regularUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
+  const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
+  const currentUser = regularUser || adminUser || {};
   const isAuthor = currentUser.id === post.author_id;
-  const isAdmin = currentUser.role === 'admin';
+  const isAdmin = currentUser.role === 'admin' || !!adminUser;
 
   // Like toggle mutation
   const likeMutation = useMutation({
     mutationFn: async ({ targetId, type }: { targetId: string; type: string }) => {
-      return apiRequest(`/api/likes/toggle`, {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
+      const response = await fetch('/api/likes/toggle', {
         method: 'POST',
-        body: { target_id: targetId, type }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ target_id: targetId, type })
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to toggle like');
+      }
+      
+      return response.json();
     },
     onSuccess: (data) => {
       // Update local state
@@ -224,7 +383,20 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/discussions/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
+      const response = await fetch(`/api/discussions/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete discussion');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
@@ -298,10 +470,10 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
                 <div className="flex items-center space-x-2">
                   <h4 className="font-medium text-ktu-deep-blue">{post.author_name}</h4>
                   {post.is_pinned && (
-                    <Pin className="h-4 w-4 text-ktu-orange" title="Pinned" />
+                    <Pin className="h-4 w-4 text-ktu-orange" />
                   )}
                   {post.is_locked && (
-                    <Lock className="h-4 w-4 text-red-500" title="Locked" />
+                    <Lock className="h-4 w-4 text-red-500" />
                   )}
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-ktu-dark-grey">
@@ -395,6 +567,9 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
               </div>
             </div>
           </div>
+
+          {/* Comment Section */}
+          <CommentSection discussionId={post.id} />
         </CardContent>
       </Card>
     </motion.div>
@@ -414,10 +589,22 @@ function CreateDiscussionDialog() {
 
   const createMutation = useMutation({
     mutationFn: async (discussionData: any) => {
-      return apiRequest('/api/discussions', {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
+      const response = await fetch('/api/discussions', {
         method: 'POST',
-        body: discussionData
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(discussionData)
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create discussion');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });

@@ -8,10 +8,11 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
   url: string,
-  data?: unknown | undefined,
+  options?: { method?: string; body?: unknown },
 ): Promise<any> {
+  const method = options?.method || 'GET';
+  const data = options?.body;
   const token = localStorage.getItem('authToken');
   
   const res = await fetch(url, {
