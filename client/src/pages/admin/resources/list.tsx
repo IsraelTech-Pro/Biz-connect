@@ -41,7 +41,6 @@ interface Resource {
 }
 
 export default function ResourcesList() {
-  const { token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,23 +48,26 @@ export default function ResourcesList() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
+  // Get admin token from localStorage
+  const adminToken = localStorage.getItem('admin_token');
+
   const { data: resources = [], isLoading } = useQuery<Resource[]>({
     queryKey: ['/api/admin/resources'],
     queryFn: async () => {
       const response = await fetch('/api/admin/resources', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch resources');
       return response.json();
     },
-    enabled: !!token
+    enabled: !!adminToken
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (resourceId: string) => {
       const response = await fetch(`/api/admin/resources/${resourceId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to delete resource');
     },
