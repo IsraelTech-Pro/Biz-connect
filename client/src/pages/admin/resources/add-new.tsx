@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
   FileText, 
@@ -38,6 +39,7 @@ interface ExternalLink {
 export default function AddResourceNew() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Get admin token from localStorage
   const token = localStorage.getItem('admin_token');
@@ -162,6 +164,9 @@ export default function AddResourceNew() {
         title: "Success",
         description: "Resource added successfully!",
       });
+
+      // Invalidate resources cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/resources'] });
 
       navigate('/admin/resources');
     } catch (error) {

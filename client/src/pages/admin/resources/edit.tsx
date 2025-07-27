@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useParams } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Upload, X, ExternalLink, FileText, Download, Eye, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ export default function EditResource() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Get admin token from localStorage
   const token = localStorage.getItem('admin_token');
@@ -215,6 +217,9 @@ export default function EditResource() {
         title: "Success",
         description: "Resource updated successfully",
       });
+
+      // Invalidate resources cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/resources'] });
 
       navigate('/admin/resources');
     } catch (error) {
