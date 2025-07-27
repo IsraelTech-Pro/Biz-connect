@@ -55,6 +55,8 @@ import AddMentor from "./pages/admin/mentors/add";
 import AddProgram from "./pages/admin/programs/add";
 import AddResource from "./pages/admin/resources/add";
 import AddResourceNew from "./pages/admin/resources/add-new";
+import EditResource from "./pages/admin/resources/edit";
+import ViewResource from "./pages/admin/resources/view";
 import MentorsList from "./pages/admin/mentors/list";
 import ProgramsList from "./pages/admin/programs/list";
 import ResourcesList from "./pages/admin/resources/list";
@@ -117,6 +119,8 @@ function Router() {
       <Route path="/admin/programs/add" component={AddProgram} />
       <Route path="/admin/programs" component={ProgramsList} />
       <Route path="/admin/resources/add" component={AddResourceNew} />
+      <Route path="/admin/resources/edit/:id" component={EditResource} />
+      <Route path="/admin/resources/:id" component={ViewResource} />
       <Route path="/admin/resources" component={ResourcesList} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />

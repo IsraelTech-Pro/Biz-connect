@@ -319,9 +319,11 @@ export default function ResourcesList() {
                                 Edit
                               </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Preview
+                            <DropdownMenuItem asChild>
+                              <Link to={`/resources/${resource.id}`}>
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Preview
+                              </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDelete(resource.id)}
