@@ -54,6 +54,7 @@ import AdminMentorship from "./pages/admin/admin-mentorship";
 import AddMentor from "./pages/admin/mentors/add";
 import AddProgram from "./pages/admin/programs/add";
 import AddResource from "./pages/admin/resources/add";
+import AddResourceNew from "./pages/admin/resources/add-new";
 import MentorsList from "./pages/admin/mentors/list";
 import ProgramsList from "./pages/admin/programs/list";
 import ResourcesList from "./pages/admin/resources/list";
@@ -115,7 +116,7 @@ function Router() {
       <Route path="/admin/mentors" component={MentorsList} />
       <Route path="/admin/programs/add" component={AddProgram} />
       <Route path="/admin/programs" component={ProgramsList} />
-      <Route path="/admin/resources/add" component={AddResource} />
+      <Route path="/admin/resources/add" component={AddResourceNew} />
       <Route path="/admin/resources" component={ResourcesList} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />

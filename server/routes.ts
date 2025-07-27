@@ -47,6 +47,33 @@ const upload = multer({
   }
 });
 
+// Configure multer for resource file uploads (supports more file types)
+const resourceUpload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit for resource files
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'image/jpeg',
+      'image/png',
+      'image/gif'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed. Please upload PDF, Word, Excel, PowerPoint, text or image files.'));
+    }
+  }
+});
+
 // Middleware to verify JWT token
 const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
@@ -2477,6 +2504,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Resource file upload endpoint
+  app.post('/api/admin/resources/upload', authenticateAdminToken, resourceUpload.array('files', 5), async (req, res) => {
+    try {
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+
+      const uploadedFiles = [];
+      
+      for (const file of req.files) {
+        // Save file to local storage
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileName = `resource-${uniqueSuffix}${path.extname(file.originalname)}`;
+        const filePath = path.join(uploadDir, fileName);
+        
+        fs.writeFileSync(filePath, file.buffer);
+        
+        const fileUrl = `/uploads/${fileName}`;
+        const fileSize = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+        
+        uploadedFiles.push({
+          name: file.originalname,
+          url: fileUrl,
+          type: file.mimetype,
+          size: fileSize
+        });
+      }
+
+      res.json({ files: uploadedFiles });
+    } catch (error) {
+      console.error('Error uploading resource files:', error);
+      res.status(500).json({ message: 'Failed to upload files' });
+    }
+  });
+
   app.post('/api/admin/resources', authenticateAdminToken, async (req, res) => {
     try {
       const resourceData = { ...req.body };
@@ -2488,6 +2550,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (resourceData.downloads && typeof resourceData.downloads === 'string') {
         resourceData.downloads = parseInt(resourceData.downloads) || 0;
       }
+      
+      // Parse tags if it's a string
+      if (resourceData.tags && typeof resourceData.tags === 'string') {
+        resourceData.tags = resourceData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      }
+      
+      // Set default values for new fields
+      resourceData.views = resourceData.views || 0;
+      resourceData.downloads = resourceData.downloads || 0;
+      resourceData.files = resourceData.files || [];
+      resourceData.external_links = resourceData.external_links || [];
       
       const resource = await storage.createResource(resourceData);
       res.json(resource);

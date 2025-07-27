@@ -7,37 +7,57 @@ import {
   Link as LinkIcon, 
   Tag, 
   Plus,
-  ArrowLeft 
+  ArrowLeft,
+  X,
+  File,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
+
+interface ResourceFile {
+  name: string;
+  url: string;
+  type: string;
+  size: string;
+}
+
+interface ExternalLink {
+  name: string;
+  url: string;
+  description: string;
+}
 
 export default function AddResource() {
   const [, navigate] = useLocation();
   const { token } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<ResourceFile[]>([]);
+  const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
+  const [newExternalLink, setNewExternalLink] = useState({ name: '', url: '', description: '' });
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     content: '',
     category: 'business-plan',
     resource_type: 'guide',
-    file_url: '',
-    external_link: '',
     tags: '',
     difficulty_level: 'beginner',
     estimated_time: '',
     status: 'published'
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -45,18 +65,91 @@ export default function AddResource() {
     }));
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch('/api/admin/resources/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload files');
+      }
+
+      const result = await response.json();
+      setUploadedFiles(prev => [...prev, ...result.files]);
+      
+      toast({
+        title: "Success",
+        description: `${result.files.length} file(s) uploaded successfully!`,
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload files.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addExternalLink = () => {
+    if (newExternalLink.name && newExternalLink.url) {
+      setExternalLinks(prev => [...prev, newExternalLink]);
+      setNewExternalLink({ name: '', url: '', description: '' });
+    }
+  };
+
+  const removeExternalLink = (index: number) => {
+    setExternalLinks(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
+      const resourceData = {
+        ...formData,
+        files: uploadedFiles,
+        external_links: externalLinks,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      };
+
       const response = await fetch('/api/admin/resources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(resourceData)
       });
 
       if (!response.ok) {
@@ -68,7 +161,7 @@ export default function AddResource() {
         description: "Resource added successfully!",
       });
 
-      navigate('/admin/dashboard');
+      navigate('/admin/resources');
     } catch (error) {
       console.error('Error adding resource:', error);
       toast({
