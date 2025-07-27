@@ -1,289 +1,623 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
-  MessageCircle, ThumbsUp, Reply, Share2, Pin, Clock, 
-  User, Eye, Star, Plus, Search, Filter, TrendingUp,
-  BookOpen, Lightbulb, HelpCircle, Users, Calendar,
-  Award, CheckCircle, ArrowUp, MessageSquare
+  MessageCircle, 
+  Users, 
+  CheckCircle, 
+  Award, 
+  Search, 
+  Plus,
+  Heart,
+  MessageSquare,
+  Eye,
+  Clock,
+  Tag,
+  Trash2,
+  Edit,
+  Pin,
+  Lock
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
-const PostCard = ({ post, index }: { post: any; index: number }) => (
-  <motion.div
-    initial={{ y: 30, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ delay: index * 0.1 }}
-  >
-    <Card className="ktu-card hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start space-x-4">
-          <Avatar className="w-10 h-10">
-            <AvatarImage src={post.author.avatar} />
-            <AvatarFallback className="bg-ktu-light-blue text-ktu-deep-blue">
-              {post.author.name.split(' ').map((n: string) => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
-          
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-semibold text-ktu-deep-blue">{post.author.name}</h4>
-                <Badge variant="outline" className="text-xs text-ktu-orange border-ktu-orange">
-                  {post.author.badge}
-                </Badge>
-                {post.pinned && <Pin className="h-4 w-4 text-ktu-orange" />}
-              </div>
-              <div className="flex items-center text-xs text-ktu-dark-grey">
-                <Clock className="h-3 w-3 mr-1" />
-                {post.timeAgo}
+// Category configuration
+const categories = [
+  {
+    name: 'General Discussion',
+    value: 'general',
+    description: 'General business and entrepreneurship topics',
+    posts: 0,
+    icon: MessageCircle,
+    color: 'bg-blue-500'
+  },
+  {
+    name: 'Business Ideas',
+    value: 'business-ideas',
+    description: 'Share and discuss new business concepts',
+    posts: 0,
+    icon: Plus,
+    color: 'bg-green-500'
+  },
+  {
+    name: 'Funding & Investment',
+    value: 'funding',
+    description: 'Capital raising and investor discussions',
+    posts: 0,
+    icon: Award,
+    color: 'bg-yellow-500'
+  },
+  {
+    name: 'Marketing & Sales',
+    value: 'marketing',
+    description: 'Marketing strategies and sales techniques',
+    posts: 0,
+    icon: Users,
+    color: 'bg-purple-500'
+  },
+  {
+    name: 'Technology',
+    value: 'tech',
+    description: 'Tech tools and digital solutions',
+    posts: 0,
+    icon: CheckCircle,
+    color: 'bg-indigo-500'
+  },
+  {
+    name: 'Success Stories',
+    value: 'success-stories',
+    description: 'Share your entrepreneurial wins',
+    posts: 0,
+    icon: Award,
+    color: 'bg-orange-500'
+  },
+  {
+    name: 'Questions & Help',
+    value: 'questions',
+    description: 'Get help from the community',
+    posts: 0,
+    icon: MessageSquare,
+    color: 'bg-red-500'
+  },
+  {
+    name: 'Networking',
+    value: 'networking',
+    description: 'Connect with other entrepreneurs',
+    posts: 0,
+    icon: Users,
+    color: 'bg-pink-500'
+  }
+];
+
+const categoryOptions = [
+  { value: 'all', label: 'All Categories' },
+  ...categories.map(cat => ({ value: cat.value, label: cat.name }))
+];
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'most-liked', label: 'Most Liked' },
+  { value: 'most-commented', label: 'Most Commented' }
+];
+
+interface Discussion {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  author_id: string;
+  author_name: string;
+  author_email: string;
+  is_pinned: boolean;
+  is_locked: boolean;
+  view_count: number;
+  like_count: number;
+  comment_count: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CommunityStats {
+  totalMembers: number;
+  totalPosts: number;
+  totalComments: number;
+  totalLikes: number;
+}
+
+// Category Card Component
+function CategoryCard({ category, index }: { category: any; index: number }) {
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className={`p-3 rounded-lg ${category.color}`}>
+              <category.icon className="h-6 w-6 text-white" />
+            </div>
+            <Badge variant="secondary" className="text-sm">
+              {category.posts} posts
+            </Badge>
+          </div>
+          <h3 className="text-lg font-semibold text-ktu-deep-blue mb-2 group-hover:text-ktu-orange transition-colors">
+            {category.name}
+          </h3>
+          <p className="text-sm text-ktu-dark-grey">{category.description}</p>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// Discussion Post Card Component
+function PostCard({ post, index }: { post: Discussion; index: number }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [userLikes, setUserLikes] = useState<string[]>([]);
+  
+  // Get current user from localStorage
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAuthor = currentUser.id === post.author_id;
+  const isAdmin = currentUser.role === 'admin';
+
+  // Like toggle mutation
+  const likeMutation = useMutation({
+    mutationFn: async ({ targetId, type }: { targetId: string; type: string }) => {
+      return apiRequest(`/api/likes/toggle`, {
+        method: 'POST',
+        body: { target_id: targetId, type }
+      });
+    },
+    onSuccess: (data) => {
+      // Update local state
+      if (data.liked) {
+        setUserLikes(prev => [...prev, post.id]);
+      } else {
+        setUserLikes(prev => prev.filter(id => id !== post.id));
+      }
+      
+      // Invalidate discussions query to refresh counts
+      queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
+      
+      toast({
+        title: data.liked ? 'Discussion liked!' : 'Like removed',
+        description: `${data.count} ${data.count === 1 ? 'like' : 'likes'} total`
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to toggle like',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest(`/api/discussions/${id}`, { method: 'DELETE' });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
+      toast({
+        title: 'Success',
+        description: 'Discussion deleted successfully'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete discussion',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleLike = () => {
+    if (!currentUser.id) {
+      toast({
+        title: 'Please login',
+        description: 'You need to login to like discussions',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    likeMutation.mutate({ targetId: post.id, type: 'discussion' });
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this discussion?')) {
+      deleteMutation.mutate(post.id);
+    }
+  };
+
+  const timeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const getCategoryColor = (category: string) => {
+    const cat = categories.find(c => c.value === category);
+    return cat?.color || 'bg-gray-500';
+  };
+
+  const isLiked = userLikes.includes(post.id);
+
+  return (
+    <motion.div
+      initial={{ y: 20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      <Card className="hover:shadow-lg transition-all duration-200 border-ktu-light-blue">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-ktu-orange text-white">
+                  {post.author_name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-medium text-ktu-deep-blue">{post.author_name}</h4>
+                  {post.is_pinned && (
+                    <Pin className="h-4 w-4 text-ktu-orange" title="Pinned" />
+                  )}
+                  {post.is_locked && (
+                    <Lock className="h-4 w-4 text-red-500" title="Locked" />
+                  )}
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-ktu-dark-grey">
+                  <Clock className="h-3 w-3" />
+                  <span>{timeAgo(post.created_at)}</span>
+                </div>
               </div>
             </div>
             
+            {(isAuthor || isAdmin) && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-ktu-dark-grey hover:text-ktu-orange"
+                  title="Edit discussion"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-ktu-dark-grey hover:text-red-500"
+                  onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
+                  title="Delete discussion"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-4">
             <h3 className="text-lg font-semibold text-ktu-deep-blue mb-2 hover:text-ktu-orange cursor-pointer transition-colors">
               {post.title}
             </h3>
-            
-            <p className="text-ktu-dark-grey mb-4 line-clamp-3">
+            <p className="text-ktu-dark-grey leading-relaxed line-clamp-3">
               {post.content}
             </p>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Badge className="bg-ktu-light-blue text-ktu-deep-blue">
-                  {post.category}
-                </Badge>
-                {post.tags.map((tag: string) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    #{tag}
-                  </Badge>
-                ))}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Badge 
+                variant="secondary" 
+                className={`${getCategoryColor(post.category)} text-white`}
+              >
+                {categories.find(c => c.value === post.category)?.name || post.category}
+              </Badge>
+              
+              {post.tags.length > 0 && (
+                <div className="flex items-center space-x-1">
+                  <Tag className="h-3 w-3 text-ktu-dark-grey" />
+                  <div className="flex space-x-1">
+                    {post.tags.slice(0, 2).map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {post.tags.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{post.tags.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-4 text-sm text-ktu-dark-grey">
+              <div className="flex items-center space-x-1">
+                <Eye className="h-4 w-4" />
+                <span>{post.view_count}</span>
               </div>
               
-              <div className="flex items-center space-x-4 text-sm text-ktu-dark-grey">
-                <div className="flex items-center space-x-1">
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>{post.likes}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{post.replies}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Eye className="h-4 w-4" />
-                  <span>{post.views}</span>
-                </div>
+              <button
+                onClick={handleLike}
+                disabled={likeMutation.isPending}
+                className={`flex items-center space-x-1 transition-colors hover:text-ktu-orange ${
+                  isLiked ? 'text-ktu-orange' : 'text-ktu-dark-grey'
+                }`}
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                <span>{post.like_count}</span>
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                <MessageSquare className="h-4 w-4" />
+                <span>{post.comment_count}</span>
               </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
 
-const CategoryCard = ({ category, index }: { category: any; index: number }) => (
-  <motion.div
-    initial={{ y: 30, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ delay: index * 0.1 }}
-  >
-    <Card className="ktu-card animate-card-lift cursor-pointer group">
-      <CardContent className="p-6">
-        <div className="flex items-center space-x-4">
-          <div className="ktu-orange-gradient p-3 rounded-full group-hover:scale-110 transition-transform">
-            <category.icon className="h-6 w-6 text-white" />
+// Create Discussion Dialog Component
+function CreateDiscussionDialog() {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('general');
+  const [tags, setTags] = useState('');
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: async (discussionData: any) => {
+      return apiRequest('/api/discussions', {
+        method: 'POST',
+        body: discussionData
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/community/stats'] });
+      
+      setOpen(false);
+      setTitle('');
+      setContent('');
+      setCategory('general');
+      setTags('');
+      
+      toast({
+        title: 'Success',
+        description: 'Discussion created successfully!'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create discussion',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const discussionData = {
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+    };
+
+    createMutation.mutate(discussionData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-ktu-orange hover:bg-ktu-orange-light">
+          <Plus className="h-4 w-4 mr-2" />
+          Start New Discussion
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Create New Discussion</DialogTitle>
+          <DialogDescription>
+            Share your ideas, ask questions, or start a conversation with the KTU entrepreneurship community.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="title">Discussion Title *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a descriptive title for your discussion"
+              className="border-ktu-light-blue focus:border-ktu-orange"
+              required
+            />
           </div>
-          
-          <div className="flex-1">
-            <h3 className="font-semibold text-ktu-deep-blue group-hover:text-ktu-orange transition-colors">
-              {category.name}
-            </h3>
-            <p className="text-sm text-ktu-dark-grey">{category.description}</p>
+
+          <div>
+            <Label htmlFor="category">Category *</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="border-ktu-light-blue">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div className="text-right">
-            <p className="text-lg font-bold text-ktu-deep-blue">{category.postCount}</p>
-            <p className="text-xs text-ktu-dark-grey">posts</p>
+
+          <div>
+            <Label htmlFor="content">Content *</Label>
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Share your thoughts, ideas, or questions..."
+              className="min-h-32 border-ktu-light-blue focus:border-ktu-orange resize-none"
+              required
+            />
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  </motion.div>
-);
+
+          <div>
+            <Label htmlFor="tags">Tags (optional)</Label>
+            <Input
+              id="tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="Enter tags separated by commas (e.g., startup, funding, marketing)"
+              className="border-ktu-light-blue focus:border-ktu-orange"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              disabled={createMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className="bg-ktu-orange hover:bg-ktu-orange-light"
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Discussion'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function CommunityForum() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('recent');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
 
-  const categories = [
-    {
-      name: "General Discussion",
-      description: "Share ideas and connect with fellow entrepreneurs",
-      icon: MessageCircle,
-      postCount: 124
-    },
-    {
-      name: "Business Ideas",
-      description: "Brainstorm and get feedback on business concepts",
-      icon: Lightbulb,
-      postCount: 89
-    },
-    {
-      name: "Success Stories",
-      description: "Celebrate wins and share inspiring journeys",
-      icon: Award,
-      postCount: 67
-    },
-    {
-      name: "Q&A Help",
-      description: "Get answers to your business questions",
-      icon: HelpCircle,
-      postCount: 156
-    },
-    {
-      name: "Networking",
-      description: "Find collaborators and build connections",
-      icon: Users,
-      postCount: 78
-    },
-    {
-      name: "Events & Meetups",
-      description: "KTU business events and gatherings",
-      icon: Calendar,
-      postCount: 34
+  // Fetch discussions
+  const { data: discussions = [], isLoading: discussionsLoading } = useQuery({
+    queryKey: ['/api/discussions', { category: selectedCategory, search: searchTerm }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedCategory && selectedCategory !== 'all') {
+        params.append('category', selectedCategory);
+      }
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      
+      const response = await fetch(`/api/discussions?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch discussions');
+      return response.json();
     }
-  ];
-
-  const posts = [
-    {
-      id: 1,
-      title: "Successfully launched my first product - lessons learned",
-      content: "After 6 months of development, I finally launched my mobile app for KTU students. Here are the key lessons I learned about customer validation, pricing, and marketing to fellow students...",
-      author: {
-        name: "Kwame Asante",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face",
-        badge: "Verified Vendor"
-      },
-      category: "Success Stories",
-      tags: ["mobile-app", "validation", "launch"],
-      likes: 23,
-      replies: 12,
-      views: 156,
-      timeAgo: "2 hours ago",
-      pinned: true
-    },
-    {
-      id: 2,
-      title: "Looking for a co-founder for my fintech startup",
-      content: "I'm building a mobile money solution specifically for students and small businesses in Ghana. Looking for someone with technical background to join as co-founder...",
-      author: {
-        name: "Ama Wilson",
-        avatar: "https://images.unsplash.com/photo-1494790108755-2616b2b9af25?w=40&h=40&fit=crop&crop=face",
-        badge: "Student Entrepreneur"
-      },
-      category: "Networking",
-      tags: ["fintech", "co-founder", "mobile-money"],
-      likes: 18,
-      replies: 8,
-      views: 89,
-      timeAgo: "5 hours ago",
-      pinned: false
-    },
-    {
-      id: 3,
-      title: "How to validate your business idea before building?",
-      content: "I have an idea for a food delivery service specifically for KTU campus, but I'm not sure if there's enough demand. What are some effective ways to validate this before investing time and money?",
-      author: {
-        name: "Joseph Mensah",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face",
-        badge: "New Member"
-      },
-      category: "Q&A Help",
-      tags: ["validation", "food-delivery", "research"],
-      likes: 15,
-      replies: 24,
-      views: 234,
-      timeAgo: "1 day ago",
-      pinned: false
-    },
-    {
-      id: 4,
-      title: "KTU Entrepreneurship Workshop - March 15th",
-      content: "The Business Development Center is organizing a workshop on 'Scaling Your Student Business'. Guest speakers include successful KTU alumni entrepreneurs. Registration opens tomorrow!",
-      author: {
-        name: "KTU BizConnect Team",
-        avatar: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40&h=40&fit=crop",
-        badge: "Official"
-      },
-      category: "Events & Meetups",
-      tags: ["workshop", "scaling", "networking"],
-      likes: 45,
-      replies: 6,
-      views: 312,
-      timeAgo: "2 days ago",
-      pinned: true
-    },
-    {
-      id: 5,
-      title: "Struggling with pricing - any advice?",
-      content: "I make custom jewelry and accessories, but I'm having trouble pricing my products competitively while maintaining good profit margins. How do you handle pricing in your businesses?",
-      author: {
-        name: "Grace Addo",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=40&h=40&fit=crop&crop=face",
-        badge: "Student Entrepreneur"
-      },
-      category: "Q&A Help",
-      tags: ["pricing", "jewelry", "profit-margins"],
-      likes: 12,
-      replies: 18,
-      views: 145,
-      timeAgo: "3 days ago",
-      pinned: false
-    },
-    {
-      id: 6,
-      title: "Business idea: Campus laundry service - thoughts?",
-      content: "I'm thinking of starting a pickup and delivery laundry service for students living on campus. Has anyone tried something similar? What challenges should I expect?",
-      author: {
-        name: "Samuel Osei",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=40&h=40&fit=crop&crop=face",
-        badge: "New Member"
-      },
-      category: "Business Ideas",
-      tags: ["laundry", "campus-service", "logistics"],
-      likes: 8,
-      replies: 15,
-      views: 98,
-      timeAgo: "4 days ago",
-      pinned: false
-    }
-  ];
-
-  const sortOptions = [
-    { value: 'recent', label: 'Most Recent' },
-    { value: 'popular', label: 'Most Popular' },
-    { value: 'replies', label: 'Most Replied' },
-    { value: 'views', label: 'Most Viewed' }
-  ];
-
-  const categoryOptions = [
-    { value: 'all', label: 'All Categories' },
-    ...categories.map(cat => ({ value: cat.name, label: cat.name }))
-  ];
-
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
-    return matchesSearch && matchesCategory;
   });
+
+  // Fetch community stats
+  const { data: stats } = useQuery<CommunityStats>({
+    queryKey: ['/api/community/stats'],
+    queryFn: async () => {
+      const response = await fetch('/api/community/stats');
+      if (!response.ok) throw new Error('Failed to fetch community stats');
+      return response.json();
+    }
+  });
+
+  // Sort and filter discussions
+  const filteredPosts = discussions
+    .filter((post: Discussion) => {
+      if (selectedCategory === 'all') return true;
+      return post.category === selectedCategory;
+    })
+    .filter((post: Discussion) => {
+      if (!searchTerm) return true;
+      return post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             post.content.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .sort((a: Discussion, b: Discussion) => {
+      switch (sortBy) {
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'most-liked':
+          return b.like_count - a.like_count;
+        case 'most-commented':
+          return b.comment_count - a.comment_count;
+        default: // newest
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  // Update category post counts
+  const categoriesWithCounts = categories.map(cat => ({
+    ...cat,
+    posts: discussions.filter((d: Discussion) => d.category === cat.value).length
+  }));
 
   return (
     <div className="min-h-screen bg-ktu-grey">
@@ -313,10 +647,7 @@ export default function CommunityForum() {
               transition={{ delay: 0.2 }}
               className="flex justify-center"
             >
-              <Button className="bg-ktu-orange hover:bg-ktu-orange-light">
-                <Plus className="h-4 w-4 mr-2" />
-                Start New Discussion
-              </Button>
+              <CreateDiscussionDialog />
             </motion.div>
           </div>
         </div>
@@ -327,10 +658,10 @@ export default function CommunityForum() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "Active Members", value: "1,247", icon: Users },
-              { label: "Total Posts", value: "3,456", icon: MessageCircle },
-              { label: "Questions Answered", value: "892", icon: CheckCircle },
-              { label: "Success Stories", value: "67", icon: Award }
+              { label: "Active Members", value: stats?.totalMembers || 0, icon: Users },
+              { label: "Total Posts", value: stats?.totalPosts || 0, icon: MessageCircle },
+              { label: "Total Comments", value: stats?.totalComments || 0, icon: MessageSquare },
+              { label: "Total Likes", value: stats?.totalLikes || 0, icon: Heart }
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
@@ -357,8 +688,8 @@ export default function CommunityForum() {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-          {categories.map((category, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          {categoriesWithCounts.map((category, index) => (
             <CategoryCard key={category.name} category={category} index={index} />
           ))}
         </div>
@@ -402,10 +733,15 @@ export default function CommunityForum() {
 
         {/* Posts */}
         <div className="space-y-4">
-          {filteredPosts.length === 0 ? (
+          {discussionsLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ktu-orange mx-auto mb-4"></div>
+              <p className="text-ktu-dark-grey">Loading discussions...</p>
+            </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="text-center py-12">
               <MessageCircle className="h-16 w-16 mx-auto mb-4 text-ktu-dark-grey opacity-50" />
-              <h3 className="text-lg font-semibold text-ktu-deep-blue mb-2">No posts found</h3>
+              <h3 className="text-lg font-semibold text-ktu-deep-blue mb-2">No discussions found</h3>
               <p className="text-ktu-dark-grey mb-4">Try adjusting your search terms or browse different categories</p>
               <Button 
                 onClick={() => {
@@ -418,7 +754,7 @@ export default function CommunityForum() {
               </Button>
             </div>
           ) : (
-            filteredPosts.map((post, index) => (
+            filteredPosts.map((post: Discussion, index: number) => (
               <PostCard key={post.id} post={post} index={index} />
             ))
           )}

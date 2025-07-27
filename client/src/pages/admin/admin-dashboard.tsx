@@ -19,7 +19,8 @@ import {
   Target,
   FileText,
   CheckCircle,
-  XCircle
+  XCircle,
+  MessageCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -259,6 +260,13 @@ export default function AdminDashboard() {
       icon: BookOpen,
       color: "bg-ktu-orange",
       action: "/admin/mentorship"
+    },
+    {
+      title: "Community Discussions",
+      description: "Manage and moderate forum discussions",
+      icon: MessageCircle,
+      color: "bg-blue-600",
+      action: "/admin/community/discussions"
     },
     {
       title: "Manage Mentors",

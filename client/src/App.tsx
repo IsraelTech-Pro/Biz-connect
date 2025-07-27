@@ -62,6 +62,7 @@ import ProgramsList from "./pages/admin/programs/list";
 import ResourcesList from "./pages/admin/resources/list";
 import AdminVendors from "@/pages/admin/vendors";
 import AdminSettings from "@/pages/admin/settings";
+import AdminDiscussions from "./pages/admin/community/discussions";
 
 // Buyer pages
 import BrowseProducts from './pages/buyers/browse-products';
@@ -124,6 +125,7 @@ function Router() {
       <Route path="/admin/resources" component={ResourcesList} />
       <Route path="/admin/vendors" component={AdminVendors} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/community/discussions" component={AdminDiscussions} />
       <Route path="/stores/:vendorId" component={VendorStore} />
       <Route path="/vendor/:id" component={VendorDetail} />
       

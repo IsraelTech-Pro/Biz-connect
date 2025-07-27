@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertOrderSchema, insertSupportRequestSchema, insertVendorSupportRequestSchema, insertPaymentSchema } from "@shared/schema";
+import { insertUserSchema, insertProductSchema, insertOrderSchema, insertSupportRequestSchema, insertVendorSupportRequestSchema, insertPaymentSchema, insertDiscussionSchema, insertCommentSchema, insertLikeSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
@@ -2699,6 +2699,354 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Admin logout error:', error);
       res.status(500).json({ message: 'Logout error' });
+    }
+  });
+
+  // ================================
+  // COMMUNITY DISCUSSION ROUTES
+  // ================================
+  
+  // Get all discussions
+  app.get('/api/discussions', async (req, res) => {
+    try {
+      const { category, search } = req.query;
+      let discussions;
+      
+      if (category && category !== 'all') {
+        discussions = await storage.getDiscussionsByCategory(category as string);
+      } else {
+        discussions = await storage.getDiscussions();
+      }
+      
+      // Filter by search term if provided
+      if (search) {
+        const searchTerm = (search as string).toLowerCase();
+        discussions = discussions.filter(d => 
+          d.title.toLowerCase().includes(searchTerm) ||
+          d.content.toLowerCase().includes(searchTerm)
+        );
+      }
+      
+      res.json(discussions);
+    } catch (error) {
+      console.error('Error fetching discussions:', error);
+      res.status(500).json({ message: 'Failed to get discussions' });
+    }
+  });
+
+  // Get single discussion
+  app.get('/api/discussions/:id', async (req, res) => {
+    try {
+      const discussion = await storage.getDiscussion(req.params.id);
+      if (!discussion) {
+        return res.status(404).json({ message: 'Discussion not found' });
+      }
+      
+      // Increment view count
+      await storage.incrementDiscussionViews(req.params.id);
+      
+      res.json(discussion);
+    } catch (error) {
+      console.error('Error fetching discussion:', error);
+      res.status(500).json({ message: 'Failed to get discussion' });
+    }
+  });
+
+  // Create new discussion
+  app.post('/api/discussions', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const discussionData = {
+        ...req.body,
+        author_id: req.user.id
+      };
+
+      const discussion = await storage.createDiscussion(discussionData);
+      res.status(201).json(discussion);
+    } catch (error) {
+      console.error('Error creating discussion:', error);
+      res.status(500).json({ message: 'Failed to create discussion' });
+    }
+  });
+
+  // Update discussion
+  app.put('/api/discussions/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const discussion = await storage.getDiscussion(req.params.id);
+      if (!discussion) {
+        return res.status(404).json({ message: 'Discussion not found' });
+      }
+
+      // Only author or admin can update
+      if (discussion.author_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      const updatedDiscussion = await storage.updateDiscussion(req.params.id, req.body);
+      res.json(updatedDiscussion);
+    } catch (error) {
+      console.error('Error updating discussion:', error);
+      res.status(500).json({ message: 'Failed to update discussion' });
+    }
+  });
+
+  // Delete discussion
+  app.delete('/api/discussions/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const discussion = await storage.getDiscussion(req.params.id);
+      if (!discussion) {
+        return res.status(404).json({ message: 'Discussion not found' });
+      }
+
+      // Only author or admin can delete
+      if (discussion.author_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      await storage.deleteDiscussion(req.params.id);
+      res.json({ message: 'Discussion deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting discussion:', error);
+      res.status(500).json({ message: 'Failed to delete discussion' });
+    }
+  });
+
+  // Get comments for a discussion
+  app.get('/api/discussions/:id/comments', async (req, res) => {
+    try {
+      const comments = await storage.getCommentsByDiscussion(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      res.status(500).json({ message: 'Failed to get comments' });
+    }
+  });
+
+  // Create comment
+  app.post('/api/comments', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const commentData = {
+        ...req.body,
+        author_id: req.user.id
+      };
+
+      const comment = await storage.createComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ message: 'Failed to create comment' });
+    }
+  });
+
+  // Update comment
+  app.put('/api/comments/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const comment = await storage.getComment(req.params.id);
+      if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+      }
+
+      // Only author or admin can update
+      if (comment.author_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      const updatedComment = await storage.updateComment(req.params.id, req.body);
+      res.json(updatedComment);
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      res.status(500).json({ message: 'Failed to update comment' });
+    }
+  });
+
+  // Delete comment
+  app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const comment = await storage.getComment(req.params.id);
+      if (!comment) {
+        return res.status(404).json({ message: 'Comment not found' });
+      }
+
+      // Only author or admin can delete
+      if (comment.author_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      await storage.deleteComment(req.params.id);
+      res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      res.status(500).json({ message: 'Failed to delete comment' });
+    }
+  });
+
+  // Toggle like (for discussions and comments)
+  app.post('/api/likes/toggle', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { target_id, type } = req.body;
+      
+      if (!target_id || !type || !['discussion', 'comment'].includes(type)) {
+        return res.status(400).json({ message: 'Invalid target_id or type' });
+      }
+
+      const result = await storage.toggleLike(req.user.id, target_id, type);
+      res.json(result);
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      res.status(500).json({ message: 'Failed to toggle like' });
+    }
+  });
+
+  // Get user's likes
+  app.get('/api/users/:id/likes', authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Users can only see their own likes unless admin
+      if (req.user.id !== req.params.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+
+      const likes = await storage.getUserLikes(req.params.id);
+      res.json(likes);
+    } catch (error) {
+      console.error('Error fetching user likes:', error);
+      res.status(500).json({ message: 'Failed to get user likes' });
+    }
+  });
+
+  // Get community stats
+  app.get('/api/community/stats', async (req, res) => {
+    try {
+      const stats = await storage.getCommunityStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching community stats:', error);
+      res.status(500).json({ message: 'Failed to get community stats' });
+    }
+  });
+
+  // ================================
+  // ADMIN COMMUNITY MANAGEMENT ROUTES
+  // ================================
+
+  // Admin: Get all discussions (including hidden/deleted)
+  app.get('/api/admin/discussions', authenticateAdminToken, async (req, res) => {
+    try {
+      const discussions = await storage.getDiscussions();
+      res.json(discussions);
+    } catch (error) {
+      console.error('Error fetching admin discussions:', error);
+      res.status(500).json({ message: 'Failed to get discussions' });
+    }
+  });
+
+  // Admin: Create discussion
+  app.post('/api/admin/discussions', authenticateAdminToken, async (req, res) => {
+    try {
+      const discussionData = {
+        ...req.body,
+        author_id: req.adminUser.id // Use admin user ID
+      };
+
+      const discussion = await storage.createDiscussion(discussionData);
+      res.status(201).json(discussion);
+    } catch (error) {
+      console.error('Error creating admin discussion:', error);
+      res.status(500).json({ message: 'Failed to create discussion' });
+    }
+  });
+
+  // Admin: Update any discussion
+  app.put('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      const updatedDiscussion = await storage.updateDiscussion(req.params.id, req.body);
+      res.json(updatedDiscussion);
+    } catch (error) {
+      console.error('Error updating admin discussion:', error);
+      res.status(500).json({ message: 'Failed to update discussion' });
+    }
+  });
+
+  // Admin: Delete any discussion
+  app.delete('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      await storage.deleteDiscussion(req.params.id);
+      res.json({ message: 'Discussion deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting admin discussion:', error);
+      res.status(500).json({ message: 'Failed to delete discussion' });
+    }
+  });
+
+  // Admin: Get all comments
+  app.get('/api/admin/comments', authenticateAdminToken, async (req, res) => {
+    try {
+      const { discussion_id } = req.query;
+      let comments;
+      
+      if (discussion_id) {
+        comments = await storage.getCommentsByDiscussion(discussion_id as string);
+      } else {
+        // Get all comments - we'll need to implement this method
+        comments = [];
+      }
+      
+      res.json(comments);
+    } catch (error) {
+      console.error('Error fetching admin comments:', error);
+      res.status(500).json({ message: 'Failed to get comments' });
+    }
+  });
+
+  // Admin: Update any comment
+  app.put('/api/admin/comments/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      const updatedComment = await storage.updateComment(req.params.id, req.body);
+      res.json(updatedComment);
+    } catch (error) {
+      console.error('Error updating admin comment:', error);
+      res.status(500).json({ message: 'Failed to update comment' });
+    }
+  });
+
+  // Admin: Delete any comment
+  app.delete('/api/admin/comments/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      await storage.deleteComment(req.params.id);
+      res.json({ message: 'Comment deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting admin comment:', error);
+      res.status(500).json({ message: 'Failed to delete comment' });
     }
   });
 

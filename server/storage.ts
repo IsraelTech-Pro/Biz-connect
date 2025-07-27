@@ -1,4 +1,4 @@
-import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, adminUsers, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource, type AdminUser, type InsertAdminUser } from "@shared/schema";
+import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, adminUsers, discussions, comments, likes, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource, type AdminUser, type InsertAdminUser, type Discussion, type InsertDiscussion, type Comment, type InsertComment, type Like, type InsertLike } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, and, desc, sql, like, or } from "drizzle-orm";
 import pg from "pg";
@@ -136,6 +136,34 @@ export interface IStorage {
   getAdminUserByUsername(username: string): Promise<AdminUser | null>;
   getAdminUserById(id: string): Promise<AdminUser | null>;
   updateAdminUser(id: string, data: Partial<InsertAdminUser>): Promise<AdminUser | null>;
+  
+  // Community Discussions
+  getDiscussions(): Promise<any[]>;
+  getDiscussionsByCategory(category: string): Promise<any[]>;
+  getDiscussion(id: string): Promise<any | undefined>;
+  createDiscussion(discussion: any): Promise<any>;
+  updateDiscussion(id: string, discussion: any): Promise<any>;
+  deleteDiscussion(id: string): Promise<void>;
+  incrementDiscussionViews(id: string): Promise<void>;
+  
+  // Comments
+  getCommentsByDiscussion(discussionId: string): Promise<any[]>;
+  getComment(id: string): Promise<any | undefined>;
+  createComment(comment: any): Promise<any>;
+  updateComment(id: string, comment: any): Promise<any>;
+  deleteComment(id: string): Promise<void>;
+  
+  // Likes
+  toggleLike(userId: string, targetId: string, type: 'discussion' | 'comment'): Promise<{ liked: boolean; count: number }>;
+  getUserLikes(userId: string): Promise<any[]>;
+  
+  // Community Stats
+  getCommunityStats(): Promise<{
+    totalMembers: number;
+    totalPosts: number;
+    totalComments: number;
+    totalLikes: number;
+  }>;
 }
 
 export class PostgresStorage implements IStorage {
@@ -663,6 +691,324 @@ export class PostgresStorage implements IStorage {
     if (!db) throw new Error('Database not available');
     const result = await db.update(adminUsers).set(data).where(eq(adminUsers.id, id)).returning();
     return result[0] || null;
+  }
+
+  // Community Discussion methods
+  async getDiscussions(): Promise<any[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      id: discussions.id,
+      title: discussions.title,
+      content: discussions.content,
+      category: discussions.category,
+      tags: discussions.tags,
+      author_id: discussions.author_id,
+      author_name: users.full_name,
+      author_email: users.email,
+      is_pinned: discussions.is_pinned,
+      is_locked: discussions.is_locked,
+      view_count: discussions.view_count,
+      like_count: discussions.like_count,
+      comment_count: discussions.comment_count,
+      status: discussions.status,
+      created_at: discussions.created_at,
+      updated_at: discussions.updated_at,
+    })
+    .from(discussions)
+    .innerJoin(users, eq(discussions.author_id, users.id))
+    .where(eq(discussions.status, 'published'))
+    .orderBy(desc(discussions.is_pinned), desc(discussions.created_at));
+    
+    return result;
+  }
+
+  async getDiscussionsByCategory(category: string): Promise<any[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      id: discussions.id,
+      title: discussions.title,
+      content: discussions.content,
+      category: discussions.category,
+      tags: discussions.tags,
+      author_id: discussions.author_id,
+      author_name: users.full_name,
+      author_email: users.email,
+      is_pinned: discussions.is_pinned,
+      is_locked: discussions.is_locked,
+      view_count: discussions.view_count,
+      like_count: discussions.like_count,
+      comment_count: discussions.comment_count,
+      status: discussions.status,
+      created_at: discussions.created_at,
+      updated_at: discussions.updated_at,
+    })
+    .from(discussions)
+    .innerJoin(users, eq(discussions.author_id, users.id))
+    .where(and(eq(discussions.category, category), eq(discussions.status, 'published')))
+    .orderBy(desc(discussions.is_pinned), desc(discussions.created_at));
+    
+    return result;
+  }
+
+  async getDiscussion(id: string): Promise<any | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      id: discussions.id,
+      title: discussions.title,
+      content: discussions.content,
+      category: discussions.category,
+      tags: discussions.tags,
+      author_id: discussions.author_id,
+      author_name: users.full_name,
+      author_email: users.email,
+      is_pinned: discussions.is_pinned,
+      is_locked: discussions.is_locked,
+      view_count: discussions.view_count,
+      like_count: discussions.like_count,
+      comment_count: discussions.comment_count,
+      status: discussions.status,
+      created_at: discussions.created_at,
+      updated_at: discussions.updated_at,
+    })
+    .from(discussions)
+    .innerJoin(users, eq(discussions.author_id, users.id))
+    .where(eq(discussions.id, id))
+    .limit(1);
+    
+    return result[0];
+  }
+
+  async createDiscussion(discussion: InsertDiscussion): Promise<any> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(discussions).values(discussion).returning();
+    return result[0];
+  }
+
+  async updateDiscussion(id: string, discussion: Partial<InsertDiscussion>): Promise<any> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(discussions)
+      .set({ ...discussion, updated_at: new Date() })
+      .where(eq(discussions.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteDiscussion(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    // Delete associated likes first
+    await db.delete(likes).where(eq(likes.discussion_id, id));
+    // Delete associated comments and their likes
+    const discussionComments = await db.select({ id: comments.id }).from(comments).where(eq(comments.discussion_id, id));
+    for (const comment of discussionComments) {
+      await db.delete(likes).where(eq(likes.comment_id, comment.id));
+    }
+    await db.delete(comments).where(eq(comments.discussion_id, id));
+    // Finally delete the discussion
+    await db.delete(discussions).where(eq(discussions.id, id));
+  }
+
+  async incrementDiscussionViews(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.update(discussions)
+      .set({ view_count: sql`${discussions.view_count} + 1` })
+      .where(eq(discussions.id, id));
+  }
+
+  // Comment methods
+  async getCommentsByDiscussion(discussionId: string): Promise<any[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      id: comments.id,
+      discussion_id: comments.discussion_id,
+      parent_comment_id: comments.parent_comment_id,
+      content: comments.content,
+      author_id: comments.author_id,
+      author_name: users.full_name,
+      author_email: users.email,
+      like_count: comments.like_count,
+      reply_count: comments.reply_count,
+      status: comments.status,
+      created_at: comments.created_at,
+      updated_at: comments.updated_at,
+    })
+    .from(comments)
+    .innerJoin(users, eq(comments.author_id, users.id))
+    .where(and(eq(comments.discussion_id, discussionId), eq(comments.status, 'published')))
+    .orderBy(comments.created_at);
+    
+    return result;
+  }
+
+  async getComment(id: string): Promise<any | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      id: comments.id,
+      discussion_id: comments.discussion_id,
+      parent_comment_id: comments.parent_comment_id,
+      content: comments.content,
+      author_id: comments.author_id,
+      author_name: users.full_name,
+      author_email: users.email,
+      like_count: comments.like_count,
+      reply_count: comments.reply_count,
+      status: comments.status,
+      created_at: comments.created_at,
+      updated_at: comments.updated_at,
+    })
+    .from(comments)
+    .innerJoin(users, eq(comments.author_id, users.id))
+    .where(eq(comments.id, id))
+    .limit(1);
+    
+    return result[0];
+  }
+
+  async createComment(comment: InsertComment): Promise<any> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(comments).values(comment).returning();
+    
+    // Update discussion comment count
+    await db.update(discussions)
+      .set({ comment_count: sql`${discussions.comment_count} + 1` })
+      .where(eq(discussions.id, comment.discussion_id));
+    
+    // Update parent comment reply count if it's a reply
+    if (comment.parent_comment_id) {
+      await db.update(comments)
+        .set({ reply_count: sql`${comments.reply_count} + 1` })
+        .where(eq(comments.id, comment.parent_comment_id));
+    }
+    
+    return result[0];
+  }
+
+  async updateComment(id: string, comment: Partial<InsertComment>): Promise<any> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(comments)
+      .set({ ...comment, updated_at: new Date() })
+      .where(eq(comments.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteComment(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    // Get comment details first
+    const comment = await db.select().from(comments).where(eq(comments.id, id)).limit(1);
+    if (!comment[0]) return;
+    
+    // Delete associated likes
+    await db.delete(likes).where(eq(likes.comment_id, id));
+    
+    // Delete the comment
+    await db.delete(comments).where(eq(comments.id, id));
+    
+    // Update discussion comment count
+    await db.update(discussions)
+      .set({ comment_count: sql`${discussions.comment_count} - 1` })
+      .where(eq(discussions.id, comment[0].discussion_id));
+    
+    // Update parent comment reply count if it was a reply
+    if (comment[0].parent_comment_id) {
+      await db.update(comments)
+        .set({ reply_count: sql`${comments.reply_count} - 1` })
+        .where(eq(comments.id, comment[0].parent_comment_id));
+    }
+  }
+
+  // Like methods
+  async toggleLike(userId: string, targetId: string, type: 'discussion' | 'comment'): Promise<{ liked: boolean; count: number }> {
+    if (!db) throw new Error('Database not available');
+    
+    // Check if like exists
+    const existingLike = await db.select()
+      .from(likes)
+      .where(and(
+        eq(likes.user_id, userId),
+        type === 'discussion' ? eq(likes.discussion_id, targetId) : eq(likes.comment_id, targetId),
+        eq(likes.type, type)
+      ))
+      .limit(1);
+    
+    if (existingLike.length > 0) {
+      // Unlike - remove the like
+      await db.delete(likes).where(eq(likes.id, existingLike[0].id));
+      
+      // Update count
+      if (type === 'discussion') {
+        await db.update(discussions)
+          .set({ like_count: sql`${discussions.like_count} - 1` })
+          .where(eq(discussions.id, targetId));
+      } else {
+        await db.update(comments)
+          .set({ like_count: sql`${comments.like_count} - 1` })
+          .where(eq(comments.id, targetId));
+      }
+      
+      return { liked: false, count: await this.getLikeCount(targetId, type) };
+    } else {
+      // Like - add the like
+      const likeData: InsertLike = {
+        user_id: userId,
+        type,
+        ...(type === 'discussion' ? { discussion_id: targetId } : { comment_id: targetId })
+      };
+      
+      await db.insert(likes).values(likeData);
+      
+      // Update count
+      if (type === 'discussion') {
+        await db.update(discussions)
+          .set({ like_count: sql`${discussions.like_count} + 1` })
+          .where(eq(discussions.id, targetId));
+      } else {
+        await db.update(comments)
+          .set({ like_count: sql`${comments.like_count} + 1` })
+          .where(eq(comments.id, targetId));
+      }
+      
+      return { liked: true, count: await this.getLikeCount(targetId, type) };
+    }
+  }
+
+  private async getLikeCount(targetId: string, type: 'discussion' | 'comment'): Promise<number> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(likes)
+      .where(and(
+        type === 'discussion' ? eq(likes.discussion_id, targetId) : eq(likes.comment_id, targetId),
+        eq(likes.type, type)
+      ));
+    
+    return Number(result[0]?.count || 0);
+  }
+
+  async getUserLikes(userId: string): Promise<any[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select()
+      .from(likes)
+      .where(eq(likes.user_id, userId));
+    
+    return result;
+  }
+
+  // Community Stats
+  async getCommunityStats(): Promise<{ totalMembers: number; totalPosts: number; totalComments: number; totalLikes: number }> {
+    if (!db) throw new Error('Database not available');
+    
+    const [membersResult, postsResult, commentsResult, likesResult] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(users),
+      db.select({ count: sql<number>`count(*)` }).from(discussions).where(eq(discussions.status, 'published')),
+      db.select({ count: sql<number>`count(*)` }).from(comments).where(eq(comments.status, 'published')),
+      db.select({ count: sql<number>`count(*)` }).from(likes)
+    ]);
+    
+    return {
+      totalMembers: Number(membersResult[0]?.count || 0),
+      totalPosts: Number(postsResult[0]?.count || 0),
+      totalComments: Number(commentsResult[0]?.count || 0),
+      totalLikes: Number(likesResult[0]?.count || 0)
+    };
   }
 }
 

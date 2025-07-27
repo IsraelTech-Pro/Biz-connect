@@ -354,3 +354,76 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
 
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+
+// Community discussions table
+export const discussions = pgTable("discussions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull().default("general"), // general, business-ideas, funding, marketing, tech, success-stories, questions, networking
+  tags: text("tags").array().default([]),
+  author_id: uuid("author_id").notNull().references(() => users.id),
+  is_pinned: boolean("is_pinned").default(false),
+  is_locked: boolean("is_locked").default(false),
+  view_count: integer("view_count").default(0),
+  like_count: integer("like_count").default(0),
+  comment_count: integer("comment_count").default(0),
+  status: text("status").notNull().default("published"), // published, hidden, deleted
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Comments table
+export const comments = pgTable("comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  discussion_id: uuid("discussion_id").notNull().references(() => discussions.id),
+  parent_comment_id: uuid("parent_comment_id").references(() => comments.id), // For nested replies
+  content: text("content").notNull(),
+  author_id: uuid("author_id").notNull().references(() => users.id),
+  like_count: integer("like_count").default(0),
+  reply_count: integer("reply_count").default(0),
+  status: text("status").notNull().default("published"), // published, hidden, deleted
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
+// Likes table for discussions and comments
+export const likes = pgTable("likes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  user_id: uuid("user_id").notNull().references(() => users.id),
+  discussion_id: uuid("discussion_id").references(() => discussions.id),
+  comment_id: uuid("comment_id").references(() => comments.id),
+  type: text("type").notNull(), // discussion or comment
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for community features
+export const insertDiscussionSchema = createInsertSchema(discussions).omit({
+  id: true,
+  view_count: true,
+  like_count: true,
+  comment_count: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  like_count: true,
+  reply_count: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export const insertLikeSchema = createInsertSchema(likes).omit({
+  id: true,
+  created_at: true,
+});
+
+// Types for community features
+export type Discussion = typeof discussions.$inferSelect;
+export type InsertDiscussion = z.infer<typeof insertDiscussionSchema>;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type Like = typeof likes.$inferSelect;
+export type InsertLike = z.infer<typeof insertLikeSchema>;
