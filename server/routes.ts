@@ -2822,6 +2822,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Increment view count for discussion
+  app.post('/api/discussions/:id/view', async (req, res) => {
+    try {
+      await storage.incrementDiscussionViews(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+      res.status(500).json({ message: 'Failed to increment view count' });
+    }
+  });
+
   // Get comments for a discussion
   app.get('/api/discussions/:id/comments', async (req, res) => {
     try {
@@ -2830,6 +2841,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching comments:', error);
       res.status(500).json({ message: 'Failed to get comments' });
+    }
+  });
+
+  // Create comment for specific discussion - support both user and admin
+  app.post('/api/discussions/:id/comments', async (req, res) => {
+    try {
+      // Try admin authentication first, then regular user
+      const adminToken = req.headers.authorization?.replace('Bearer ', '');
+      let userId = null;
+      
+      if (adminToken) {
+        try {
+          // Check if it's an admin token
+          const adminPayload = jwt.verify(adminToken, JWT_SECRET);
+          if (adminPayload && typeof adminPayload === 'object' && adminPayload.adminId) {
+            userId = adminPayload.adminId;
+          } else if (adminPayload && typeof adminPayload === 'object' && adminPayload.userId) {
+            // Regular user token
+            userId = adminPayload.userId;
+          }
+        } catch (adminError) {
+          return res.status(401).json({ message: 'Invalid token' });
+        }
+      }
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const commentData = {
+        ...req.body,
+        discussion_id: req.params.id,
+        author_id: userId
+      };
+
+      const comment = await storage.createComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error('Error creating comment:', error);
+      res.status(500).json({ message: 'Failed to create comment' });
     }
   });
 

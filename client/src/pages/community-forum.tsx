@@ -322,11 +322,170 @@ function CommentSection({ discussionId }: { discussionId: string }) {
   );
 }
 
+// Edit Discussion Dialog Component
+function EditDiscussionDialog({ post, open, onOpenChange }: { post: Discussion; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
+  const [category, setCategory] = useState(post.category);
+  const [tags, setTags] = useState(post.tags.join(', '));
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: async (discussionData: any) => {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
+      const response = await fetch(`/api/discussions/${post.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(discussionData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update discussion');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/community/stats'] });
+      
+      onOpenChange(false);
+      
+      toast({
+        title: 'Success',
+        description: 'Discussion updated successfully!'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update discussion',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Title and content are required',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const discussionData = {
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+    };
+
+    updateMutation.mutate(discussionData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Discussion</DialogTitle>
+          <DialogDescription>
+            Update your discussion details below.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="edit-title">Title</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter discussion title..."
+              className="border-ktu-light-blue focus:border-ktu-orange"
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-content">Content</Label>
+            <Textarea
+              id="edit-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What would you like to discuss?"
+              className="min-h-32 border-ktu-light-blue focus:border-ktu-orange resize-none"
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-category">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="border-ktu-light-blue focus:border-ktu-orange">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-tags">Tags (comma separated)</Label>
+              <Input
+                id="edit-tags"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="business, startup, tech..."
+                className="border-ktu-light-blue focus:border-ktu-orange"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className="bg-ktu-orange hover:bg-ktu-orange-light"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? 'Updating...' : 'Update Discussion'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Discussion Post Card Component
 function PostCard({ post, index }: { post: Discussion; index: number }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [userLikes, setUserLikes] = useState<string[]>([]);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   
   // Get current user from localStorage - try both regular and admin tokens
   const regularUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
@@ -427,6 +586,16 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
     likeMutation.mutate({ targetId: post.id, type: 'discussion' });
   };
 
+  const handleViewPost = async () => {
+    try {
+      await fetch(`/api/discussions/${post.id}/view`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Error incrementing view count:', error);
+    }
+  };
+
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this discussion?')) {
       deleteMutation.mutate(post.id);
@@ -489,6 +658,7 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-ktu-dark-grey hover:text-ktu-orange"
+                  onClick={() => setShowEditDialog(true)}
                   title="Edit discussion"
                 >
                   <Edit className="h-4 w-4" />
@@ -508,7 +678,10 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
           </div>
 
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-ktu-deep-blue mb-2 hover:text-ktu-orange cursor-pointer transition-colors">
+            <h3 
+              className="text-lg font-semibold text-ktu-deep-blue mb-2 hover:text-ktu-orange cursor-pointer transition-colors"
+              onClick={handleViewPost}
+            >
               {post.title}
             </h3>
             <p className="text-ktu-dark-grey leading-relaxed line-clamp-3">
@@ -572,6 +745,13 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
           <CommentSection discussionId={post.id} />
         </CardContent>
       </Card>
+
+      {/* Edit Discussion Dialog */}
+      <EditDiscussionDialog 
+        post={post} 
+        open={showEditDialog} 
+        onOpenChange={setShowEditDialog} 
+      />
     </motion.div>
   );
 }
