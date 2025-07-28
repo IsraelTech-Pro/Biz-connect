@@ -852,13 +852,11 @@ function CreateDiscussionDialog() {
   const createMutation = useMutation({
     mutationFn: async (discussionData: any) => {
       const authToken = localStorage.getItem('authToken');
-      const adminToken = localStorage.getItem('admin_token');
-      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
       
-      // Determine if user is admin and use appropriate endpoint  
-      const isAdmin = !!adminUser && !!adminToken;
-      const endpoint = isAdmin ? '/api/admin/discussions' : '/api/discussions';
-      const token = isAdmin ? adminToken : authToken;
+      // Regular users should always use the regular endpoint
+      // Only use admin endpoint when specifically in admin interface
+      const endpoint = '/api/discussions';
+      const token = authToken;
       
       const response = await fetch(endpoint, {
         method: 'POST',
