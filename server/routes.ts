@@ -2691,6 +2691,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update admin profile
+  app.put('/api/admin/profile', authenticateAdminToken, async (req, res) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: 'Admin authentication required' });
+      }
+
+      const { username, email, full_name, phone, bio } = req.body;
+      
+      const updatedProfile = await storage.updateAdminUser(req.adminUser.id, {
+        username,
+        email,
+        full_name,
+        phone,
+        bio
+      });
+
+      res.json({
+        id: updatedProfile.id,
+        username: updatedProfile.username,
+        full_name: updatedProfile.full_name,
+        email: updatedProfile.email,
+        phone: updatedProfile.phone,
+        bio: updatedProfile.bio,
+        is_active: updatedProfile.is_active,
+        created_at: updatedProfile.created_at
+      });
+    } catch (error) {
+      console.error('Error updating admin profile:', error);
+      res.status(500).json({ message: 'Failed to update admin profile' });
+    }
+  });
+
   // Admin logout route
   app.post('/api/admin/logout', authenticateAdminToken, async (req, res) => {
     try {
@@ -2809,7 +2842,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Discussion not found' });
       }
 
-      // Admin can only update their own discussion
+      // Admin has full management rights - they can edit any discussion
+      // But for now, let's restrict to their own posts as per user requirement
       if (discussion.author_id !== req.adminUser.id) {
         return res.status(403).json({ message: 'You can only edit your own discussions' });
       }
@@ -2859,7 +2893,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Discussion not found' });
       }
 
-      // Admin can only delete their own discussion
+      // Admin has full management rights - they can delete any discussion  
+      // But for now, let's restrict to their own posts as per user requirement
       if (discussion.author_id !== req.adminUser.id) {
         return res.status(403).json({ message: 'You can only delete your own discussions' });
       }

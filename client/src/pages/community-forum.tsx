@@ -184,10 +184,41 @@ function CommentSection({ discussionId }: { discussionId: string }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get current user
-  const regularUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
-  const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
-  const currentUser = regularUser || adminUser || {};
+  // Get current user - use proper user detection
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    const adminToken = localStorage.getItem('admin_token');
+    
+    if (authToken) {
+      // Fetch regular user data
+      fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .then(user => {
+        if (user) {
+          setCurrentUser(user);
+          setIsAdmin(false);
+        }
+      })
+      .catch(() => {});
+    } else if (adminToken) {
+      // Get admin user from localStorage
+      try {
+        const adminUserData = localStorage.getItem('admin_user');
+        if (adminUserData) {
+          const adminUser = JSON.parse(adminUserData);
+          setCurrentUser(adminUser);
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error('Error parsing admin user:', error);
+      }
+    }
+  }, []);
 
   // Fetch comments
   const { data: comments = [], isLoading: commentsLoading } = useQuery({
@@ -206,8 +237,7 @@ function CommentSection({ discussionId }: { discussionId: string }) {
       const authToken = localStorage.getItem('authToken');
       const adminToken = localStorage.getItem('admin_token');
       
-      // Determine if user is admin and use appropriate endpoint
-      const isAdmin = !!adminUser && !!adminToken;
+      // Use appropriate endpoint based on current user type
       const endpoint = isAdmin 
         ? `/api/admin/discussions/${discussionId}/comments`
         : `/api/discussions/${discussionId}/comments`;
@@ -505,12 +535,36 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
   const queryClient = useQueryClient();
   const [userLikes, setUserLikes] = useState<string[]>([]);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
-  // Get current user from localStorage - try both regular and admin tokens
-  const regularUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') : null;
-  const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
-  const currentUser = regularUser || adminUser || {};
-  const isAuthor = currentUser.id === post.author_id;
+  // Get current user - use proper authentication check
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    const adminToken = localStorage.getItem('admin_token');
+    
+    if (authToken) {
+      // Fetch regular user data
+      fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .then(user => setCurrentUser(user))
+      .catch(() => setCurrentUser(null));
+    } else if (adminToken) {
+      // Get admin user from localStorage
+      try {
+        const adminUserData = localStorage.getItem('admin_user');
+        if (adminUserData) {
+          setCurrentUser(JSON.parse(adminUserData));
+        }
+      } catch (error) {
+        console.error('Error parsing admin user:', error);
+        setCurrentUser(null);
+      }
+    }
+  }, []);
+  
+  const isAuthor = currentUser?.id === post.author_id;
 
   // Like toggle mutation
   const likeMutation = useMutation({
