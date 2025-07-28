@@ -68,6 +68,9 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<any>(null);
+  
+  // Get admin token once at component level
+  const adminToken = localStorage.getItem('admin_token');
 
   // Check for admin authentication on component mount
   useEffect(() => {
@@ -92,18 +95,6 @@ export default function AdminDashboard() {
       setLocation('/admin/login');
     }
   }, [setLocation]);
-
-  // If no admin session, render loading or redirect (useEffect will handle redirect)
-  if (!adminUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleBusinessApproval = async (businessId: string, approved: boolean) => {
     const adminToken = localStorage.getItem('admin_token');
@@ -137,7 +128,6 @@ export default function AdminDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     queryFn: async () => {
-      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/stats', {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -150,7 +140,6 @@ export default function AdminDashboard() {
   const { data: businesses = [], isLoading: businessesLoading, refetch: refetchBusinesses } = useQuery<Business[]>({
     queryKey: ['/api/admin/businesses'],
     queryFn: async () => {
-      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/businesses', {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -163,7 +152,6 @@ export default function AdminDashboard() {
   const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
     queryFn: async () => {
-      const adminToken = localStorage.getItem('admin_token');
       const response = await fetch('/api/admin/users', {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
@@ -172,6 +160,18 @@ export default function AdminDashboard() {
     },
     enabled: !!adminToken
   });
+
+  // If no admin session, render loading or redirect (useEffect will handle redirect)
+  if (!adminUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Admin authentication is already handled by the useEffect and early return above
 
