@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { 
@@ -278,10 +279,201 @@ function CreateDiscussionDialog() {
   );
 }
 
+// Edit Discussion Dialog Component
+function EditDiscussionDialog({ 
+  discussion, 
+  open, 
+  onOpenChange 
+}: { 
+  discussion: Discussion | null; 
+  open: boolean; 
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('general');
+  const [tags, setTags] = useState('');
+  const [isPinned, setIsPinned] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Update form when discussion changes
+  React.useEffect(() => {
+    if (discussion) {
+      setTitle(discussion.title);
+      setContent(discussion.content);
+      setCategory(discussion.category);
+      setTags(discussion.tags.join(', '));
+      setIsPinned(discussion.is_pinned);
+    }
+  }, [discussion]);
+
+  const updateMutation = useMutation({
+    mutationFn: async (discussionData: any) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`/api/admin/discussions/${discussion!.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(discussionData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update discussion');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/discussions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/community/stats'] });
+      
+      onOpenChange(false);
+      
+      toast({
+        title: 'Success',
+        description: 'Discussion updated successfully!'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update discussion',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim() || !content.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const discussionData = {
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+      is_pinned: isPinned
+    };
+
+    updateMutation.mutate(discussionData);
+  };
+
+  if (!discussion) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Discussion</DialogTitle>
+          <DialogDescription>
+            Update the discussion details below.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="edit-title">Discussion Title *</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a descriptive title for the discussion"
+              className="border-ktu-light-blue focus:border-ktu-orange"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="edit-category">Category *</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="border-ktu-light-blue">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="edit-content">Content *</Label>
+            <Textarea
+              id="edit-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What would you like to discuss?"
+              className="min-h-32 border-ktu-light-blue focus:border-ktu-orange resize-none"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="edit-tags">Tags (optional)</Label>
+            <Input
+              id="edit-tags"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="e.g., startup, funding, marketing (comma-separated)"
+              className="border-ktu-light-blue focus:border-ktu-orange"
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="edit-pinned"
+              checked={isPinned}
+              onChange={(e) => setIsPinned(e.target.checked)}
+              className="rounded border-ktu-light-blue"
+            />
+            <Label htmlFor="edit-pinned">Pin this discussion to the top</Label>
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              className="bg-ktu-orange hover:bg-ktu-orange-light"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? 'Updating...' : 'Update Discussion'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminDiscussions() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [editingDiscussion, setEditingDiscussion] = useState<Discussion | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -394,6 +586,10 @@ export default function AdminDiscussions() {
       id: discussion.id,
       data: { is_locked: !discussion.is_locked }
     });
+  };
+
+  const handleEdit = (discussion: Discussion) => {
+    setEditingDiscussion(discussion);
   };
 
   const handleDelete = (id: string) => {
@@ -659,6 +855,11 @@ export default function AdminDiscussions() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(discussion)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleTogglePin(discussion)}>
                               <Pin className="h-4 w-4 mr-2" />
                               {discussion.is_pinned ? 'Unpin' : 'Pin'}
@@ -686,6 +887,15 @@ export default function AdminDiscussions() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Discussion Dialog */}
+      <EditDiscussionDialog 
+        discussion={editingDiscussion}
+        open={!!editingDiscussion}
+        onOpenChange={(open) => {
+          if (!open) setEditingDiscussion(null);
+        }}
+      />
     </div>
   );
 }
