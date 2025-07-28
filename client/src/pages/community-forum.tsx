@@ -203,8 +203,17 @@ function CommentSection({ discussionId }: { discussionId: string }) {
   // Create comment mutation
   const createCommentMutation = useMutation({
     mutationFn: async (commentData: { content: string }) => {
-      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
-      const response = await fetch(`/api/discussions/${discussionId}/comments`, {
+      const authToken = localStorage.getItem('authToken');
+      const adminToken = localStorage.getItem('admin_token');
+      
+      // Determine if user is admin and use appropriate endpoint
+      const isAdmin = !!adminUser && !!adminToken;
+      const endpoint = isAdmin 
+        ? `/api/admin/discussions/${discussionId}/comments`
+        : `/api/discussions/${discussionId}/comments`;
+      const token = isAdmin ? adminToken : authToken;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -334,8 +343,18 @@ function EditDiscussionDialog({ post, open, onOpenChange }: { post: Discussion; 
 
   const updateMutation = useMutation({
     mutationFn: async (discussionData: any) => {
-      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
-      const response = await fetch(`/api/discussions/${post.id}`, {
+      const authToken = localStorage.getItem('authToken');
+      const adminToken = localStorage.getItem('admin_token');
+      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
+      
+      // Determine if user is admin and use appropriate endpoint
+      const isAdmin = !!adminUser && !!adminToken;
+      const endpoint = isAdmin 
+        ? `/api/admin/discussions/${post.id}`
+        : `/api/discussions/${post.id}`;
+      const token = isAdmin ? adminToken : authToken;
+      
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -492,7 +511,6 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
   const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
   const currentUser = regularUser || adminUser || {};
   const isAuthor = currentUser.id === post.author_id;
-  const isAdmin = currentUser.role === 'admin' || !!adminUser;
 
   // Like toggle mutation
   const likeMutation = useMutation({
@@ -542,8 +560,18 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
-      const response = await fetch(`/api/discussions/${id}`, {
+      const authToken = localStorage.getItem('authToken');
+      const adminToken = localStorage.getItem('admin_token');
+      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
+      
+      // Determine if user is admin and use appropriate endpoint
+      const isAdmin = !!adminUser && !!adminToken;
+      const endpoint = isAdmin 
+        ? `/api/admin/discussions/${id}`
+        : `/api/discussions/${id}`;
+      const token = isAdmin ? adminToken : authToken;
+      
+      const response = await fetch(endpoint, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -652,7 +680,7 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
               </div>
             </div>
             
-            {(isAuthor || isAdmin) && (
+            {isAuthor && (
               <div className="flex items-center space-x-2">
                 <Button
                   variant="ghost"
@@ -769,8 +797,16 @@ function CreateDiscussionDialog() {
 
   const createMutation = useMutation({
     mutationFn: async (discussionData: any) => {
-      const token = localStorage.getItem('authToken') || localStorage.getItem('admin_token');
-      const response = await fetch('/api/discussions', {
+      const authToken = localStorage.getItem('authToken');
+      const adminToken = localStorage.getItem('admin_token');
+      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
+      
+      // Determine if user is admin and use appropriate endpoint  
+      const isAdmin = !!adminUser && !!adminToken;
+      const endpoint = isAdmin ? '/api/admin/discussions' : '/api/discussions';
+      const token = isAdmin ? adminToken : authToken;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

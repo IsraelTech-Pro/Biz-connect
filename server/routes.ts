@@ -2772,7 +2772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update discussion
+  // Update discussion - regular users
   app.put('/api/discussions/:id', authenticateToken, async (req, res) => {
     try {
       if (!req.user) {
@@ -2784,9 +2784,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Discussion not found' });
       }
 
-      // Only author or admin can update
-      if (discussion.author_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Unauthorized' });
+      // Only author can update their own discussion
+      if (discussion.author_id !== req.user.id) {
+        return res.status(403).json({ message: 'You can only edit your own discussions' });
       }
 
       const updatedDiscussion = await storage.updateDiscussion(req.params.id, req.body);
@@ -2797,7 +2797,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete discussion
+  // Update discussion - admin users
+  app.put('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: 'Admin authentication required' });
+      }
+
+      const discussion = await storage.getDiscussion(req.params.id);
+      if (!discussion) {
+        return res.status(404).json({ message: 'Discussion not found' });
+      }
+
+      // Admin can only update their own discussion
+      if (discussion.author_id !== req.adminUser.id) {
+        return res.status(403).json({ message: 'You can only edit your own discussions' });
+      }
+
+      const updatedDiscussion = await storage.updateDiscussion(req.params.id, req.body);
+      res.json(updatedDiscussion);
+    } catch (error) {
+      console.error('Error updating admin discussion:', error);
+      res.status(500).json({ message: 'Failed to update discussion' });
+    }
+  });
+
+  // Delete discussion - regular users
   app.delete('/api/discussions/:id', authenticateToken, async (req, res) => {
     try {
       if (!req.user) {
@@ -2809,15 +2834,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Discussion not found' });
       }
 
-      // Only author or admin can delete
-      if (discussion.author_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Unauthorized' });
+      // Only author can delete their own discussion
+      if (discussion.author_id !== req.user.id) {
+        return res.status(403).json({ message: 'You can only delete your own discussions' });
       }
 
       await storage.deleteDiscussion(req.params.id);
       res.json({ message: 'Discussion deleted successfully' });
     } catch (error) {
       console.error('Error deleting discussion:', error);
+      res.status(500).json({ message: 'Failed to delete discussion' });
+    }
+  });
+
+  // Delete discussion - admin users  
+  app.delete('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: 'Admin authentication required' });
+      }
+
+      const discussion = await storage.getDiscussion(req.params.id);
+      if (!discussion) {
+        return res.status(404).json({ message: 'Discussion not found' });
+      }
+
+      // Admin can only delete their own discussion
+      if (discussion.author_id !== req.adminUser.id) {
+        return res.status(403).json({ message: 'You can only delete your own discussions' });
+      }
+
+      await storage.deleteDiscussion(req.params.id);
+      res.json({ message: 'Discussion deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting admin discussion:', error);
       res.status(500).json({ message: 'Failed to delete discussion' });
     }
   });
@@ -2844,42 +2894,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create comment for specific discussion - support both user and admin
-  app.post('/api/discussions/:id/comments', async (req, res) => {
+  // Create comment for specific discussion - regular users
+  app.post('/api/discussions/:id/comments', authenticateToken, async (req, res) => {
     try {
-      // Try admin authentication first, then regular user
-      const adminToken = req.headers.authorization?.replace('Bearer ', '');
-      let userId = null;
-      
-      if (adminToken) {
-        try {
-          // Check if it's an admin token
-          const adminPayload = jwt.verify(adminToken, JWT_SECRET);
-          if (adminPayload && typeof adminPayload === 'object' && adminPayload.adminId) {
-            userId = adminPayload.adminId;
-          } else if (adminPayload && typeof adminPayload === 'object' && adminPayload.userId) {
-            // Regular user token
-            userId = adminPayload.userId;
-          }
-        } catch (adminError) {
-          return res.status(401).json({ message: 'Invalid token' });
-        }
-      }
-      
-      if (!userId) {
+      if (!req.user) {
         return res.status(401).json({ message: 'Authentication required' });
       }
 
       const commentData = {
         ...req.body,
         discussion_id: req.params.id,
-        author_id: userId
+        author_id: req.user.id
       };
 
       const comment = await storage.createComment(commentData);
       res.status(201).json(comment);
     } catch (error) {
       console.error('Error creating comment:', error);
+      res.status(500).json({ message: 'Failed to create comment' });
+    }
+  });
+
+  // Create comment for specific discussion - admin users
+  app.post('/api/admin/discussions/:id/comments', authenticateAdminToken, async (req, res) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: 'Admin authentication required' });
+      }
+
+      const commentData = {
+        ...req.body,
+        discussion_id: req.params.id,
+        author_id: req.adminUser.id
+      };
+
+      const comment = await storage.createComment(commentData);
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error('Error creating admin comment:', error);
       res.status(500).json({ message: 'Failed to create comment' });
     }
   });
