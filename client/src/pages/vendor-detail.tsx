@@ -278,20 +278,34 @@ export default function VendorDetail() {
           {/* Vendor Header */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
             {/* Store Banner */}
-            <div className="h-48 bg-gradient-to-r from-orange-400 to-orange-600 relative">
+            <div className="h-48 relative" style={{
+              backgroundImage: vendor.banner_url && typeof vendor.banner_url === 'object' && vendor.banner_url.url 
+                ? `url(${vendor.banner_url.url})` 
+                : 'linear-gradient(to right, #fb923c, #ea580c)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}>
               <div className="absolute inset-0 bg-black/20"></div>
               <div className="absolute bottom-6 left-6 right-6">
                 <div className="flex items-end justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="bg-white p-3 rounded-full">
-                      <Store className="w-8 h-8 text-orange-600" />
+                    <div className="bg-white p-3 rounded-full overflow-hidden">
+                      {vendor.profile_picture && typeof vendor.profile_picture === 'object' && vendor.profile_picture.url ? (
+                        <img 
+                          src={vendor.profile_picture.url} 
+                          alt={vendor.profile_picture.alt || "Store logo"}
+                          className="w-8 h-8 object-cover"
+                        />
+                      ) : (
+                        <Store className="w-8 h-8 text-orange-600" />
+                      )}
                     </div>
                     <div className="text-white">
                       <h1 className="text-2xl font-bold">
-                        {vendor.store_name || `${vendor.full_name}'s Store`}
+                        {vendor.business_name || `${vendor.full_name}'s Store`}
                       </h1>
                       <p className="text-orange-100">
-                        {vendor.store_description || 'Quality products from trusted vendor'}
+                        {vendor.business_description || 'Quality products from trusted vendor'}
                       </p>
                     </div>
                   </div>

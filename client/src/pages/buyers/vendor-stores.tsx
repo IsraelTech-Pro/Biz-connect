@@ -113,11 +113,25 @@ export default function VendorStores() {
                 >
                   <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
                     {/* Store Banner */}
-                    <div className="h-32 bg-gradient-to-r from-orange-400 to-orange-600 relative">
+                    <div className="h-32 relative" style={{
+                      backgroundImage: vendor.banner_url && typeof vendor.banner_url === 'object' && vendor.banner_url.url 
+                        ? `url(${vendor.banner_url.url})` 
+                        : 'linear-gradient(to right, #fb923c, #ea580c)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}>
                       <div className="absolute inset-0 bg-black/20"></div>
                       <div className="absolute top-4 left-4">
-                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2">
-                          <Store className="w-6 h-6 text-orange-600" />
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-2 overflow-hidden">
+                          {vendor.profile_picture && typeof vendor.profile_picture === 'object' && vendor.profile_picture.url ? (
+                            <img 
+                              src={vendor.profile_picture.url} 
+                              alt={vendor.profile_picture.alt || "Store logo"}
+                              className="w-6 h-6 object-cover rounded-full"
+                            />
+                          ) : (
+                            <Store className="w-6 h-6 text-orange-600" />
+                          )}
                         </div>
                       </div>
                       {vendor.status === 'approved' && (
@@ -134,10 +148,10 @@ export default function VendorStores() {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-grow">
                           <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors">
-                            {vendor.store_name || `${vendor.full_name}'s Store`}
+                            {vendor.business_name || `${vendor.full_name}'s Store`}
                           </h3>
                           <p className="text-gray-600 text-sm mb-2">
-                            {vendor.store_description || 'Quality products from trusted vendor'}
+                            {vendor.business_description || 'Quality products from trusted vendor'}
                           </p>
                           <div className="flex items-center text-gray-500 text-sm">
                             <MapPin className="w-4 h-4 mr-1" />
