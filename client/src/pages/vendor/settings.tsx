@@ -26,7 +26,7 @@ export default function VendorSettings() {
   });
 
   // Use fresh user data if available, otherwise fallback to context user
-  const currentUser = freshUser || user;
+  const currentUser: any = freshUser || user;
   
   // Helper functions for phone number formatting
   const formatPhoneNumber = (phoneNumber: string): string => {
@@ -117,7 +117,13 @@ export default function VendorSettings() {
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
       console.log('Sending update request with data:', data);
-      const response = await apiRequest('PUT', `/api/users/${currentUser?.id}`, data);
+      if (!currentUser?.id) {
+        throw new Error('User ID not found');
+      }
+      const response = await apiRequest(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        body: data,
+      });
       console.log('Update response:', response);
       return response;
     },
@@ -144,11 +150,11 @@ export default function VendorSettings() {
         description: "Your contact information has been updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Update error:', error);
       toast({
         title: "Error",
-        description: "Failed to update contact information. Please try again.",
+        description: error?.message || "Failed to update contact information. Please try again.",
         variant: "destructive"
       });
     }
@@ -277,20 +283,24 @@ export default function VendorSettings() {
     setLogoFile(null);
     setLogoPreview(null);
     // This will set the profile_picture to null in the next update
-    updateProfileMutation.mutate({
-      ...formData,
-      profile_picture: null
-    });
+    if (currentUser?.id) {
+      updateProfileMutation.mutate({
+        ...formData,
+        profile_picture: null
+      });
+    }
   };
 
   const removeBanner = () => {
     setBannerFile(null);
     setBannerPreview(null);
     // This will set the banner_url to null in the next update
-    updateProfileMutation.mutate({
-      ...formData,
-      banner_url: null
-    });
+    if (currentUser?.id) {
+      updateProfileMutation.mutate({
+        ...formData,
+        banner_url: null
+      });
+    }
   };
 
   return (
