@@ -50,11 +50,48 @@ export default function ProductDetail() {
   const handleBuyNow = () => {
     if (!product) return;
     addItem(product, quantity);
-    // In a real app, this would navigate to checkout
     toast({
       title: "Proceeding to checkout",
       description: `${quantity} ${product.title}(s) added to cart. Redirecting to checkout...`,
     });
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+    
+    const productUrl = `${window.location.origin}/products/${product.id}`;
+    const shareData = {
+      title: product.title,
+      text: `Check out ${product.title} on KTU BizConnect`,
+      url: productUrl,
+    };
+
+    if (navigator.share && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        // User canceled sharing
+      }
+    } else {
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(productUrl);
+        toast({
+          title: "Link copied!",
+          description: "Product link has been copied to your clipboard.",
+        });
+      } catch (error) {
+        toast({
+          title: "Share failed",
+          description: "Unable to share this product.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleVisitStore = (vendorId: string) => {
+    setLocation(`/vendor/${vendorId}`);
   };
 
   const handleBack = () => {
@@ -67,7 +104,7 @@ export default function ProductDetail() {
 
   // Get product images from database
   const productImages = product?.product_images ? 
-    product.product_images.map(img => img.url) : 
+    product.product_images.map((img: any) => img.url) : 
     product?.image_url ? [product.image_url] : [];
 
   // Calculate discount and other values from database
@@ -153,7 +190,7 @@ export default function ProductDetail() {
                 {/* Image Thumbnails - Only show if there are multiple images */}
                 {productImages.length > 1 && (
                   <div className="flex space-x-2 overflow-x-auto">
-                    {productImages.map((img, index) => (
+                    {productImages.map((img: string, index: number) => (
                       <button
                         key={index}
                         onClick={() => setSelectedImage(index)}
@@ -174,29 +211,9 @@ export default function ProductDetail() {
 
               {/* Product Info - Right Side */}
               <div className="lg:col-span-6 space-y-6">
-                {/* Product Title & Brand */}
+                {/* Product Title */}
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    Brand: <span className="text-orange-500 font-medium">{vendor?.business_name || 'VendorHub'}</span>
-                  </p>
                   <h1 className="text-xl lg:text-2xl font-bold text-black mb-3">{product.title}</h1>
-                  
-                  {/* Flash Sales Badge */}
-                  {discountPercent > 0 && (
-                    <div className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-sm font-medium inline-block mb-3">
-                      Flash Sales
-                    </div>
-                  )}
-                  
-                  {/* Rating */}
-                  <div className="flex items-center space-x-2 mb-4">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600">({ratingCount} verified ratings)</span>
-                  </div>
                 </div>
 
                 {/* Price Section */}
@@ -292,21 +309,22 @@ export default function ProductDetail() {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Heart className="mr-2 h-4 w-4" />
-                      Save for Later
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={handleShare}
+                    >
                       <Share2 className="mr-2 h-4 w-4" />
-                      Share
+                      Share Product
                     </Button>
                   </div>
                 </div>
 
                 {/* Vendor Info */}
                 {vendor && (
-                  <Card className="border-gray-200">
-                    <CardContent className="p-4">
+                  <Card className="border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+                    <CardContent className="p-4" onClick={() => handleVisitStore(vendor.id)}>
                       <h3 className="font-semibold mb-3 text-gray-800">Seller Information</h3>
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -318,10 +336,13 @@ export default function ProductDetail() {
                           <p className="font-medium text-sm">{vendor.business_name || vendor.full_name}</p>
                           <p className="text-xs text-gray-600">KTU Student Entrepreneur</p>
                         </div>
+                        <Button variant="outline" size="sm">
+                          Visit Store
+                        </Button>
                       </div>
-                      {vendor.whatsapp_number && (
+                      {(vendor as any).whatsapp_number && (
                         <div className="mt-3">
-                          <p className="text-xs text-gray-600">Contact: {vendor.whatsapp_number}</p>
+                          <p className="text-xs text-gray-600">Contact: {(vendor as any).whatsapp_number}</p>
                         </div>
                       )}
                     </CardContent>
@@ -336,11 +357,9 @@ export default function ProductDetail() {
             <Card>
               <CardContent className="p-0">
                 <Tabs defaultValue="details" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="details">Product Details</TabsTrigger>
                     <TabsTrigger value="specs">Specifications</TabsTrigger>
-                    <TabsTrigger value="reviews">Verified Ratings</TabsTrigger>
-                    <TabsTrigger value="questions">Questions</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="details" className="p-6">
@@ -378,12 +397,7 @@ export default function ProductDetail() {
                             <span className="text-gray-600">Category:</span>
                             <span className="font-medium">{product.category}</span>
                           </div>
-                          {product.brand && (
-                            <div className="flex justify-between py-2 border-b">
-                              <span className="text-gray-600">Brand:</span>
-                              <span className="font-medium">{product.brand}</span>
-                            </div>
-                          )}
+
                           {product.weight && (
                             <div className="flex justify-between py-2 border-b">
                               <span className="text-gray-600">Weight:</span>
@@ -416,46 +430,7 @@ export default function ProductDetail() {
                       </div>
                     </div>
                   </TabsContent>
-                  
-                  <TabsContent value="reviews" className="p-6">
-                    <div className="space-y-6">
-                      {rating > 0 && ratingCount > 0 ? (
-                        <div className="flex items-center space-x-4">
-                          <div className="text-center">
-                            <div className="text-3xl font-bold">{parseFloat(rating).toFixed(1)}</div>
-                            <div className="text-sm text-gray-600">out of 5</div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className={`w-4 h-4 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                                ))}
-                              </div>
-                              <span className="text-sm text-gray-600">{ratingCount} verified ratings</span>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-gray-600">No ratings yet for this product.</p>
-                          <p className="text-sm text-gray-500 mt-2">Be the first to leave a review!</p>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="questions" className="p-6">
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-lg">Questions about this product?</h3>
-                      <div className="bg-gray-50 p-4 rounded-lg text-center">
-                        <p className="text-gray-600 mb-3">Have a question about this product?</p>
-                        <Button className="btn-orange-primary">
-                          Ask Question
-                        </Button>
-                      </div>
-                    </div>
-                  </TabsContent>
+
                 </Tabs>
               </CardContent>
             </Card>
