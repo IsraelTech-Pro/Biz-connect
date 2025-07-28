@@ -304,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process the update data
       const updateData = {
         ...req.body,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date(),
         // Remove password field if it exists
         password: undefined,
         // Ensure JSONB fields are properly formatted
