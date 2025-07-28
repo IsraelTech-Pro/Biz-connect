@@ -54,7 +54,7 @@ export const Header = () => {
               <Link to="/" className="font-bold hover:text-ktu-orange transition-colors">
                 KTU BIZCONNECT
               </Link>
-              <Link to="/businesses" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">
+              <Link to="/student-businesses" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">
                 Student Entrepreneurs
               </Link>
               <Link to="/" className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer">

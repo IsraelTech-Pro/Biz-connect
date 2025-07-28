@@ -315,7 +315,7 @@ export default function KTUHome() {
       <section className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-ktu-deep-blue">Featured Student Businesses</h2>
-          <Link href="/businesses">
+          <Link href="/student-businesses">
             <Button variant="outline" className="border-ktu-orange text-ktu-orange hover:bg-ktu-orange hover:text-white">
               View All <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
@@ -339,7 +339,8 @@ export default function KTUHome() {
                 name: business.business_name || business.full_name,
                 description: business.business_description || "KTU Student Business",
                 category: business.business_category || "Student Business",
-                image: business.business_logo?.[0]?.url || business.profile_image?.[0]?.url || `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop`
+                image: (business.profile_picture && Array.isArray(business.profile_picture) && business.profile_picture[0]?.url) || 
+                       `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop`
               }} />
             ))
           )}
@@ -374,7 +375,9 @@ export default function KTUHome() {
                 name: product.title,
                 description: product.description,
                 price: product.price,
-                image: product.product_images?.[0]?.url || product.image_url || `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop`
+                image: (product.product_images && Array.isArray(product.product_images) && product.product_images[0]?.url) || 
+                       product.image_url || 
+                       `https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=200&fit=crop`
               }} />
             ))
           )}
@@ -392,7 +395,7 @@ export default function KTUHome() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Link href={`/businesses?category=${category.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
+              <Link href={`/student-businesses?category=${category.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and')}`}>
                 <Card className="relative overflow-hidden group cursor-pointer hover:scale-105 transition-transform">
                   <div className="relative h-32">
                     <img 

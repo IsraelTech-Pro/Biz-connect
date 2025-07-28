@@ -63,10 +63,10 @@ export default function VendorStores() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Vendor Stores
+              Student Businesses
             </h1>
             <p className="text-gray-600">
-              Discover amazing stores and shop from trusted vendors
+              Discover amazing businesses run by KTU student entrepreneurs
             </p>
           </div>
 
@@ -108,7 +108,7 @@ export default function VendorStores() {
               return (
                 <Link 
                   key={vendor.id} 
-                  to={`/vendor/${vendor.id}`}
+                  to={`/business/${vendor.id}`}
                   className="block group"
                 >
                   <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
@@ -227,10 +227,10 @@ export default function VendorStores() {
                         </div>
                       )}
 
-                      {/* View Store Button */}
+                      {/* View Business Button */}
                       <div className="mt-6 pt-4 border-t border-gray-100">
                         <div className="btn-orange-primary text-center py-2 rounded-lg text-sm font-medium group-hover:bg-orange-600 transition-colors">
-                          View Store
+                          View Business
                         </div>
                       </div>
                     </div>
@@ -245,10 +245,10 @@ export default function VendorStores() {
             <div className="text-center py-12">
               <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                No vendor stores found
+                No student businesses found
               </h3>
               <p className="text-gray-500">
-                Be the first to start selling on VendorHub!
+                Be the first to start your business on KTU BizConnect!
               </p>
             </div>
           )}

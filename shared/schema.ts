@@ -377,7 +377,7 @@ export const discussions = pgTable("discussions", {
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
   discussion_id: uuid("discussion_id").notNull().references(() => discussions.id),
-  parent_comment_id: uuid("parent_comment_id").references(() => comments.id), // For nested replies
+  parent_comment_id: uuid("parent_comment_id"), // For nested replies
   content: text("content").notNull(),
   author_id: uuid("author_id").notNull().references(() => users.id),
   like_count: integer("like_count").default(0),

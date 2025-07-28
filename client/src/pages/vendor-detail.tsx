@@ -62,13 +62,13 @@ export default function VendorDetail() {
     }
   };
 
-  // Copy store URL to clipboard
+  // Copy business URL to clipboard
   const copyStoreUrl = async () => {
     try {
       await navigator.clipboard.writeText(storeUrl);
       toast({
         title: "Success",
-        description: "Store URL copied to clipboard!",
+        description: "Business URL copied to clipboard!",
       });
     } catch (error) {
       console.error('Error copying to clipboard:', error);
@@ -85,7 +85,7 @@ export default function VendorDetail() {
     if (!qrCodeUrl) return;
     
     const link = document.createElement('a');
-    link.download = `${vendor?.store_name || vendor?.full_name || 'vendor'}-store-qr.png`;
+    link.download = `${vendor?.business_name || vendor?.full_name || 'student-business'}-qr.png`;
     link.href = qrCodeUrl;
     link.click();
     
@@ -98,8 +98,8 @@ export default function VendorDetail() {
   // Share via Web Share API or fallback
   const shareStore = async () => {
     const shareData = {
-      title: `${vendor?.store_name || `${vendor?.full_name}'s Store`} - VendorHub`,
-      text: `Check out this amazing store on VendorHub! ${vendor?.store_description || 'Quality products from trusted vendor'}`,
+      title: `${vendor?.business_name || `${vendor?.full_name}'s Business`} - KTU BizConnect`,
+      text: `Check out this amazing student business on KTU BizConnect! ${vendor?.business_description || 'Quality products from KTU student entrepreneur'}`,
       url: storeUrl,
     };
 
@@ -108,7 +108,7 @@ export default function VendorDetail() {
         await navigator.share(shareData);
         toast({
           title: "Success",
-          description: "Store shared successfully!",
+          description: "Business shared successfully!",
         });
       } catch (error) {
         console.error('Error sharing:', error);
@@ -270,9 +270,9 @@ export default function VendorDetail() {
 
         <div className="mobile-padding py-6">
           {/* Back Button */}
-          <Link to="/vendor-stores" className="inline-flex items-center text-sm text-gray-600 hover:text-orange-600 mb-6">
+          <Link to="/student-businesses" className="inline-flex items-center text-sm text-gray-600 hover:text-orange-600 mb-6">
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Vendor Stores
+            Back to Student Businesses
           </Link>
 
           {/* Vendor Header */}
@@ -320,7 +320,7 @@ export default function VendorDetail() {
                       className="btn-orange-primary flex items-center space-x-2 text-sm"
                     >
                       <Share2 className="w-4 h-4" />
-                      <span>Share Store</span>
+                      <span>Share Business</span>
                     </Button>
                   </div>
                 </div>
@@ -364,7 +364,7 @@ export default function VendorDetail() {
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Store Information</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">Business Information</h3>
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
@@ -393,7 +393,7 @@ export default function VendorDetail() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Store Products</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Business Products</h2>
                   <p className="text-sm text-gray-600">
                     {vendorProducts.length} products available
                   </p>

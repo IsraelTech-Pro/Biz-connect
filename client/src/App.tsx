@@ -16,11 +16,10 @@ import NotFound from "@/pages/not-found";
 import KTUHome from "@/pages/ktu-home";
 import ProductDetail from "@/pages/product-detail";
 import Vendors from "@/pages/vendors";
-import VendorStore from "@/pages/vendor-store";
+
 import VendorDetail from "@/pages/vendor-detail";
 
 // KTU specific pages
-import Businesses from "@/pages/businesses";
 import ProductsListing from "@/pages/products-listing";
 import BusinessResources from "./pages/business-resources";
 import ResourceDetail from "./pages/resource-detail";
@@ -89,7 +88,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={KTUHome} />
-      <Route path="/businesses" component={Businesses} />
+      {/* Remove duplicate /businesses route - consolidating to /student-businesses */}
       <Route path="/mentorship" component={MentorshipHub} />
       <Route path="/resources" component={BusinessResources} />
       <Route path="/resources/:id" component={ResourceDetail} />
@@ -114,12 +113,12 @@ function Router() {
       <Route path="/vendor/analytics" component={VendorAnalytics} />
       <Route path="/vendor/settings" component={VendorSettings} />
 
-      <Route path="/stores/:vendorId" component={VendorStore} />
-      <Route path="/vendor/:id" component={VendorDetail} />
+      {/* Student Business pages */}
+      <Route path="/student-businesses" component={VendorStores} />
+      <Route path="/business/:id" component={VendorDetail} />
       
-      {/* Buyer pages */}
+      {/* Browse Products */}
       <Route path="/browse-products" component={BrowseProducts} />
-      <Route path="/vendor-stores" component={VendorStores} />
       <Route path="/track-order" component={TrackOrder} />
       <Route path="/return-policy" component={ReturnPolicy} />
       <Route path="/customer-support" component={CustomerSupport} />
