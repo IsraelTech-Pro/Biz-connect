@@ -109,15 +109,30 @@ export default function VendorProducts() {
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       setIsSubmitting(true);
       
-      return apiRequest('PUT', `/api/products/${id}`, {
-        ...data,
-        image_url: productImages[0] || data.image_url,
-        product_images: productImages.length > 0 ? productImages.map((url, index) => ({
-          url,
-          alt: `Product image ${index + 1}`,
-          primary: index === 0
-        })) : []
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...data,
+          image_url: productImages[0] || data.image_url,
+          product_images: productImages.length > 0 ? productImages.map((url, index) => ({
+            url,
+            alt: `Product image ${index + 1}`,
+            primary: index === 0
+          })) : []
+        })
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update product');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });

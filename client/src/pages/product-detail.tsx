@@ -19,15 +19,6 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  // Mock product images array (in real app, this would come from product data)
-  const productImages = [
-    "/api/placeholder/600/600",
-    "/api/placeholder/600/600",
-    "/api/placeholder/600/600",
-    "/api/placeholder/600/600",
-    "/api/placeholder/600/600"
-  ];
-
   const { data: product, isLoading } = useQuery<Product>({
     queryKey: ['/api/products', id],
     queryFn: async () => {
@@ -74,11 +65,18 @@ export default function ProductDetail() {
     }
   };
 
-  const discountPercent = 43; // Mock discount
-  const originalPrice = parseFloat(product?.price || '0') * 1.75;
-  const rating = "4.5";
-  const ratingCount = "287";
-  const itemsLeft = Math.floor(Math.random() * 20) + 5;
+  // Get product images from database
+  const productImages = product?.product_images ? 
+    product.product_images.map(img => img.url) : 
+    product?.image_url ? [product.image_url] : [];
+
+  // Calculate discount and other values from database
+  const discountPercent = product?.discount_percentage || 0;
+  const originalPrice = parseFloat(product?.original_price || product?.price || '0');
+  const currentPrice = parseFloat(product?.price || '0');
+  const rating = product?.rating_average || "0";
+  const ratingCount = product?.rating_count || "0";
+  const itemsLeft = product?.stock_quantity || 0;
 
   if (isLoading) {
     return (
@@ -146,30 +144,32 @@ export default function ProductDetail() {
                 {/* Main Product Image */}
                 <div className="mb-4">
                   <img
-                    src={product.image_url || productImages[selectedImage]}
+                    src={productImages.length > 0 ? productImages[selectedImage] : '/api/placeholder/600/600'}
                     alt={product.title}
                     className="w-full h-80 lg:h-96 object-cover rounded-lg border"
                   />
                 </div>
                 
-                {/* Image Thumbnails */}
-                <div className="flex space-x-2 overflow-x-auto">
-                  {productImages.map((img, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImage(index)}
-                      className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden ${
-                        selectedImage === index ? 'border-orange-500' : 'border-gray-200'
-                      }`}
-                    >
-                      <img
-                        src={product.image_url || img}
-                        alt={`${product.title} view ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
+                {/* Image Thumbnails - Only show if there are multiple images */}
+                {productImages.length > 1 && (
+                  <div className="flex space-x-2 overflow-x-auto">
+                    {productImages.map((img, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImage(index)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg border-2 overflow-hidden ${
+                          selectedImage === index ? 'border-orange-500' : 'border-gray-200'
+                        }`}
+                      >
+                        <img
+                          src={img}
+                          alt={`${product.title} view ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Product Info - Right Side */}
@@ -203,9 +203,9 @@ export default function ProductDetail() {
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <div className="flex items-center space-x-3 mb-2">
                     <span className="text-2xl lg:text-3xl font-bold text-black">
-                      GH₵ {parseFloat(product.price).toFixed(2)}
+                      GH₵ {currentPrice.toFixed(2)}
                     </span>
-                    {discountPercent > 0 && (
+                    {discountPercent > 0 && originalPrice > currentPrice && (
                       <>
                         <span className="text-lg text-gray-500 line-through">
                           GH₵ {originalPrice.toFixed(2)}
@@ -316,19 +316,14 @@ export default function ProductDetail() {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-sm">{vendor.business_name || vendor.full_name}</p>
-                          <p className="text-xs text-gray-600">98% Seller Score</p>
+                          <p className="text-xs text-gray-600">KTU Student Entrepreneur</p>
                         </div>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                        <div className="flex items-center space-x-1">
-                          <Check className="w-3 h-3 text-green-600" />
-                          <span>Shipping speed: Excellent</span>
+                      {vendor.whatsapp_number && (
+                        <div className="mt-3">
+                          <p className="text-xs text-gray-600">Contact: {vendor.whatsapp_number}</p>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Check className="w-3 h-3 text-green-600" />
-                          <span>Quality Score: Excellent</span>
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
@@ -355,25 +350,18 @@ export default function ProductDetail() {
                         {product.description}
                       </p>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                        <div>
-                          <h4 className="font-medium mb-2">Key Features</h4>
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            <li>• High-quality materials</li>
-                            <li>• Durable construction</li>
-                            <li>• Easy to use</li>
-                            <li>• Excellent value</li>
-                          </ul>
+                      {product.tags && product.tags.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="font-medium mb-2">Product Tags</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {product.tags.map((tag, index) => (
+                              <span key={index} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium mb-2">What's in the Box</h4>
-                          <ul className="text-sm text-gray-600 space-y-1">
-                            <li>• 1 x {product.title}</li>
-                            <li>• 1 x User Manual</li>
-                            <li>• 1 x Warranty Card</li>
-                          </ul>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </TabsContent>
                   
@@ -383,30 +371,46 @@ export default function ProductDetail() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-3">
                           <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">SKU:</span>
+                            <span className="text-gray-600">Product ID:</span>
                             <span className="font-medium">{product.id.slice(0, 8)}</span>
                           </div>
                           <div className="flex justify-between py-2 border-b">
                             <span className="text-gray-600">Category:</span>
                             <span className="font-medium">{product.category}</span>
                           </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">Weight:</span>
-                            <span className="font-medium">0.5 kg</span>
-                          </div>
+                          {product.brand && (
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-gray-600">Brand:</span>
+                              <span className="font-medium">{product.brand}</span>
+                            </div>
+                          )}
+                          {product.weight && (
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-gray-600">Weight:</span>
+                              <span className="font-medium">{product.weight} kg</span>
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-3">
                           <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">Brand:</span>
-                            <span className="font-medium">{vendor?.business_name || 'VendorHub'}</span>
+                            <span className="text-gray-600">Vendor:</span>
+                            <span className="font-medium">{vendor?.business_name || vendor?.full_name || 'KTU BizConnect'}</span>
                           </div>
+                          {product.sku && (
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-gray-600">SKU:</span>
+                              <span className="font-medium">{product.sku}</span>
+                            </div>
+                          )}
+                          {product.dimensions && (
+                            <div className="flex justify-between py-2 border-b">
+                              <span className="text-gray-600">Dimensions:</span>
+                              <span className="font-medium">{product.dimensions}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">Color:</span>
-                            <span className="font-medium">Black</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">Material:</span>
-                            <span className="font-medium">Premium Quality</span>
+                            <span className="text-gray-600">Stock:</span>
+                            <span className="font-medium">{product.stock_quantity} available</span>
                           </div>
                         </div>
                       </div>
@@ -415,60 +419,29 @@ export default function ProductDetail() {
                   
                   <TabsContent value="reviews" className="p-6">
                     <div className="space-y-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">{rating}</div>
-                          <div className="text-sm text-gray-600">out of 5</div>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-4 h-4 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                              ))}
-                            </div>
-                            <span className="text-sm text-gray-600">{ratingCount} verified ratings</span>
+                      {rating > 0 && ratingCount > 0 ? (
+                        <div className="flex items-center space-x-4">
+                          <div className="text-center">
+                            <div className="text-3xl font-bold">{parseFloat(rating).toFixed(1)}</div>
+                            <div className="text-sm text-gray-600">out of 5</div>
                           </div>
-                          <div className="space-y-1">
-                            {[5, 4, 3, 2, 1].map((stars) => (
-                              <div key={stars} className="flex items-center space-x-2">
-                                <span className="text-sm w-4">{stars}</span>
-                                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                  <div 
-                                    className="bg-yellow-400 h-2 rounded-full" 
-                                    style={{ width: stars === 5 ? '80%' : stars === 4 ? '15%' : '5%' }}
-                                  ></div>
-                                </div>
-                                <span className="text-xs text-gray-600 w-8">
-                                  {stars === 5 ? '229' : stars === 4 ? '43' : '15'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="space-y-4">
-                        <h4 className="font-medium">Comments from Verified Purchases</h4>
-                        <div className="space-y-4">
-                          <div className="border-b pb-4">
+                          <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-2">
                               <div className="flex items-center">
                                 {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  <Star key={i} className={`w-4 h-4 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
                                 ))}
                               </div>
-                              <span className="text-sm font-medium">Great product</span>
+                              <span className="text-sm text-gray-600">{ratingCount} verified ratings</span>
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">
-                              Excellent quality and fast delivery. Highly recommended!
-                            </p>
-                            <p className="text-xs text-gray-500">03-07-2025 by John D. - Verified Purchase</p>
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-gray-600">No ratings yet for this product.</p>
+                          <p className="text-sm text-gray-500 mt-2">Be the first to leave a review!</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                   
