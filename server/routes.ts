@@ -2830,31 +2830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update discussion - admin users
-  app.put('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
-    try {
-      if (!req.adminUser) {
-        return res.status(401).json({ message: 'Admin authentication required' });
-      }
 
-      const discussion = await storage.getDiscussion(req.params.id);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      // Admin has full management rights - they can edit any discussion
-      // But for now, let's restrict to their own posts as per user requirement
-      if (discussion.author_id !== req.adminUser.id) {
-        return res.status(403).json({ message: 'You can only edit your own discussions' });
-      }
-
-      const updatedDiscussion = await storage.updateDiscussion(req.params.id, req.body);
-      res.json(updatedDiscussion);
-    } catch (error) {
-      console.error('Error updating admin discussion:', error);
-      res.status(500).json({ message: 'Failed to update discussion' });
-    }
-  });
 
   // Delete discussion - regular users
   app.delete('/api/discussions/:id', authenticateToken, async (req, res) => {
@@ -2881,31 +2857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete discussion - admin users  
-  app.delete('/api/admin/discussions/:id', authenticateAdminToken, async (req, res) => {
-    try {
-      if (!req.adminUser) {
-        return res.status(401).json({ message: 'Admin authentication required' });
-      }
 
-      const discussion = await storage.getDiscussion(req.params.id);
-      if (!discussion) {
-        return res.status(404).json({ message: 'Discussion not found' });
-      }
-
-      // Admin has full management rights - they can delete any discussion  
-      // But for now, let's restrict to their own posts as per user requirement
-      if (discussion.author_id !== req.adminUser.id) {
-        return res.status(403).json({ message: 'You can only delete your own discussions' });
-      }
-
-      await storage.deleteDiscussion(req.params.id);
-      res.json({ message: 'Discussion deleted successfully' });
-    } catch (error) {
-      console.error('Error deleting admin discussion:', error);
-      res.status(500).json({ message: 'Failed to delete discussion' });
-    }
-  });
 
   // Increment view count for discussion
   app.post('/api/discussions/:id/view', async (req, res) => {
