@@ -235,13 +235,11 @@ function CommentSection({ discussionId }: { discussionId: string }) {
   const createCommentMutation = useMutation({
     mutationFn: async (commentData: { content: string }) => {
       const authToken = localStorage.getItem('authToken');
-      const adminToken = localStorage.getItem('admin_token');
       
-      // Use appropriate endpoint based on current user type
-      const endpoint = isAdmin 
-        ? `/api/admin/discussions/${discussionId}/comments`
-        : `/api/discussions/${discussionId}/comments`;
-      const token = isAdmin ? adminToken : authToken;
+      // Regular users should always use the regular endpoint
+      // Only use admin endpoint when specifically in admin interface
+      const endpoint = `/api/discussions/${discussionId}/comments`;
+      const token = authToken;
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -374,15 +372,11 @@ function EditDiscussionDialog({ post, open, onOpenChange }: { post: Discussion; 
   const updateMutation = useMutation({
     mutationFn: async (discussionData: any) => {
       const authToken = localStorage.getItem('authToken');
-      const adminToken = localStorage.getItem('admin_token');
-      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
       
-      // Determine if user is admin and use appropriate endpoint
-      const isAdmin = !!adminUser && !!adminToken;
-      const endpoint = isAdmin 
-        ? `/api/admin/discussions/${post.id}`
-        : `/api/discussions/${post.id}`;
-      const token = isAdmin ? adminToken : authToken;
+      // Regular users should always use the regular endpoint
+      // Only use admin endpoint when specifically in admin interface
+      const endpoint = `/api/discussions/${post.id}`;
+      const token = authToken;
       
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -615,15 +609,11 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const authToken = localStorage.getItem('authToken');
-      const adminToken = localStorage.getItem('admin_token');
-      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user') || '{}') : null;
       
-      // Determine if user is admin and use appropriate endpoint
-      const isAdmin = !!adminUser && !!adminToken;
-      const endpoint = isAdmin 
-        ? `/api/admin/discussions/${id}`
-        : `/api/discussions/${id}`;
-      const token = isAdmin ? adminToken : authToken;
+      // Regular users should always use the regular endpoint
+      // Only use admin endpoint when specifically in admin interface
+      const endpoint = `/api/discussions/${id}`;
+      const token = authToken;
       
       const response = await fetch(endpoint, {
         method: 'DELETE',
