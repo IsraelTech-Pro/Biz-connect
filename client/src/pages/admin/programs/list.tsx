@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context';
+// Removed useAuth import - admin has separate authentication
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 
@@ -40,7 +40,8 @@ interface Program {
 }
 
 export default function ProgramsList() {
-  const { token } = useAuth();
+  // Get admin token directly from localStorage
+  const adminToken = localStorage.getItem('admin_token');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,19 +52,19 @@ export default function ProgramsList() {
     queryKey: ['/api/admin/programs'],
     queryFn: async () => {
       const response = await fetch('/api/admin/programs', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch programs');
       return response.json();
     },
-    enabled: !!token
+    enabled: !!adminToken
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (programId: string) => {
       const response = await fetch(`/api/admin/programs/${programId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to delete program');
     },

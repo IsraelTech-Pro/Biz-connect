@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context';
+// Removed useAuth import - admin has separate authentication
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 

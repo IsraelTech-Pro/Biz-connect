@@ -8,7 +8,8 @@ import {
   Eye, 
   Search,
   Filter,
-  MoreHorizontal
+  MoreHorizontal,
+  BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/auth-context';
+// Removed useAuth import - admin has separate authentication
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 
@@ -38,29 +39,31 @@ interface Mentor {
 }
 
 export default function MentorsList() {
-  const { token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Get admin token directly from localStorage
+  const adminToken = localStorage.getItem('admin_token');
 
   const { data: mentors = [], isLoading } = useQuery<Mentor[]>({
     queryKey: ['/api/admin/mentors'],
     queryFn: async () => {
       const response = await fetch('/api/admin/mentors', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to fetch mentors');
       return response.json();
     },
-    enabled: !!token
+    enabled: !!adminToken
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (mentorId: string) => {
       const response = await fetch(`/api/admin/mentors/${mentorId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (!response.ok) throw new Error('Failed to delete mentor');
     },

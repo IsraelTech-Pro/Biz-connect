@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/auth-context';
+// Removed useAuth import - admin has separate authentication
 import { useToast } from '@/hooks/use-toast';
 import { Link, useLocation } from 'wouter';
 
@@ -64,27 +64,28 @@ interface User {
 }
 
 export default function AdminDashboard() {
-  const { user, token } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
+  const [adminUser, setAdminUser] = useState<any>(null);
 
   // Check for admin authentication on component mount
   useEffect(() => {
     const adminToken = localStorage.getItem('admin_token');
-    const adminUser = localStorage.getItem('admin_user');
+    const adminUserData = localStorage.getItem('admin_user');
     
-    if (!adminToken || !adminUser) {
+    if (!adminToken || !adminUserData) {
       setLocation('/admin/login');
       return;
     }
     
     // Verify token is still valid
     try {
-      const userData = JSON.parse(adminUser);
+      const userData = JSON.parse(adminUserData);
       if (!userData.username) {
         throw new Error('Invalid admin session');
       }
+      setAdminUser(userData);
     } catch (error) {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
@@ -92,12 +93,8 @@ export default function AdminDashboard() {
     }
   }, [setLocation]);
 
-  // Get admin session data
-  const adminToken = localStorage.getItem('admin_token');
-  const adminUser = localStorage.getItem('admin_user');
-  
   // If no admin session, render loading or redirect (useEffect will handle redirect)
-  if (!adminToken || !adminUser) {
+  if (!adminUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
