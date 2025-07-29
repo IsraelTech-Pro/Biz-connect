@@ -17,7 +17,7 @@ import { getCategoryLabel } from '@shared/categories';
 // KTU BizConnect Business Card Component
 const BusinessCard = ({ business }: { business: any }) => {
   return (
-    <Link href={`/stores/${business.id}`} className="block h-full">
+    <Link href={`/business/${business.id}`} className="block h-full">
       <div className="ktu-card animate-card-lift h-full group">
         <div className="relative overflow-hidden">
           <img 
