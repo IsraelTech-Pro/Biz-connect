@@ -211,48 +211,51 @@ export default function VendorDetail() {
     
     return (
       <Link to={`/products/${product.id}`} className="block h-full">
-        <div className="product-card-vendorhub">
+        <div className="ktu-card animate-card-lift h-full group">
           <div className="relative overflow-hidden">
             <img 
               src={product.image_url || "/api/placeholder/140/140"} 
               alt={product.title}
-              className="w-full object-cover transition-transform duration-300 hover:scale-105"
+              className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            {discountPercent > 0 && (
-              <div className="discount-badge animate-pulse">
-                -{discountPercent}%
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
-          </div>
-          
-          <div className="card-content">
-            <div className="flex-grow">
-              <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 leading-tight mb-2">
-                {product.title.length > 25 ? product.title.substring(0, 25) + '...' : product.title}
-              </h3>
-              
-              <div className="flex items-center space-x-1 mb-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-2.5 h-2.5 ${i < Math.floor(parseFloat(productRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                  ))}
-                </div>
-                <span className="text-xs text-gray-500 font-medium">({ratingCount})</span>
-              </div>
+            <div className="absolute top-2 left-2">
+              <span className="bg-ktu-orange text-white text-xs px-2 py-1 rounded font-medium">
+                GH₵{product.price}
+              </span>
             </div>
+            <div className="absolute top-2 right-2 flex flex-col gap-1">
+              <button className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors text-ktu-dark-grey">
+                <Heart className="h-3 w-3" />
+              </button>
+              <button className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors text-ktu-dark-grey">
+                <ShoppingBag className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+          <div className="p-3">
+            <div className="mb-2">
+              <span className="text-xs text-ktu-orange font-medium">{vendor?.business_name || 'KTU Vendor'}</span>
+            </div>
+            <h4 className="font-medium text-ktu-deep-blue text-sm mb-1 line-clamp-1 group-hover:text-ktu-orange transition-colors">
+              {product.title}
+            </h4>
+            <p className="text-xs text-ktu-dark-grey line-clamp-2 mb-2">
+              {product.description}
+            </p>
             
-            <div className="space-y-1">
+            <div className="flex items-center justify-between">
               <div className="flex items-center space-x-1">
-                <span className="text-orange-600 font-bold text-sm">GH₵ {product.price}</span>
-                {discountPercent > 0 && (
-                  <span className="text-gray-400 line-through text-xs">GH₵ {originalPrice.toFixed(2)}</span>
-                )}
+                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs text-ktu-dark-grey">
+                  {productRating}
+                </span>
+                <span className="text-xs text-ktu-dark-grey">
+                  ({ratingCount})
+                </span>
               </div>
-              
-              <div className="text-xs text-gray-500 font-medium">
-                {itemsLeft} items left
-              </div>
+              <span className="text-xs text-ktu-dark-grey">
+                {itemsLeft} left
+              </span>
             </div>
           </div>
         </div>
