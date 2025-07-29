@@ -103,7 +103,7 @@ export default function ProductDetail() {
   };
 
   const handleVisitStore = (vendorId: string) => {
-    setLocation(`/vendor/${vendorId}`);
+    setLocation(`/business/${vendorId}`);
   };
 
   const handleBack = () => {
