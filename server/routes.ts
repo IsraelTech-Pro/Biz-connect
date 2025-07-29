@@ -547,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ensure arrays are properly handled
         tags: Array.isArray(req.body.tags) ? req.body.tags : (req.body.tags ? req.body.tags.split(',').map(t => t.trim()) : []),
         product_images: Array.isArray(req.body.product_images) ? req.body.product_images : [],
-        updated_at: new Date().toISOString(),
+        updated_at: new Date(),
         // Remove promotional, SEO, and flash sale fields - vendors cannot modify these
         flash_sale_end_date: undefined,
         is_flash_sale: undefined,
