@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
-import { Store, MapPin, Star, Package, Users, ShoppingBag, ArrowLeft, Grid3X3, List, Share2, Copy, Download, QrCode } from "lucide-react";
+import { Store, MapPin, Star, Package, Users, ShoppingBag, ArrowLeft, Grid3X3, List, Share2, Copy, Download, QrCode, Heart } from "lucide-react";
 import { User, Product } from "@/shared/schema";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
