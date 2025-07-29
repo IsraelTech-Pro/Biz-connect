@@ -210,50 +210,47 @@ export default function VendorDetail() {
     const ratingCount = Math.floor(Math.random() * 500) + 50;
     
     return (
-      <Link to={`/products/${product.id}`} className="block h-full">
-        <div className="ktu-card animate-card-lift h-full group">
-          <div className="relative overflow-hidden">
+      <Link to={`/products/${product.id}`} className="block">
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group">
+          <div className="relative">
             <img 
               src={product.image_url || "/api/placeholder/140/140"} 
               alt={product.title}
-              className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-24 object-cover group-hover:scale-105 transition-transform duration-200"
             />
-            <div className="absolute top-2 left-2">
-              <span className="bg-ktu-orange text-white text-xs px-2 py-1 rounded font-medium">
+            <div className="absolute top-1 left-1">
+              <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded font-medium">
                 GH₵{product.price}
               </span>
             </div>
-            <div className="absolute top-2 right-2 flex flex-col gap-1">
-              <button className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors text-ktu-dark-grey">
-                <Heart className="h-3 w-3" />
+            <div className="absolute top-1 right-1 flex flex-col gap-0.5">
+              <button className="p-1 rounded-full bg-white/90 hover:bg-white transition-colors text-gray-600">
+                <Heart className="h-2.5 w-2.5" />
               </button>
-              <button className="p-1.5 rounded-full bg-white/90 hover:bg-white transition-colors text-ktu-dark-grey">
-                <ShoppingBag className="h-3 w-3" />
+              <button className="p-1 rounded-full bg-white/90 hover:bg-white transition-colors text-gray-600">
+                <ShoppingBag className="h-2.5 w-2.5" />
               </button>
             </div>
           </div>
-          <div className="p-3">
-            <div className="mb-2">
-              <span className="text-xs text-ktu-orange font-medium">{vendor?.business_name || 'KTU Vendor'}</span>
+          <div className="p-2">
+            <div className="mb-1">
+              <span className="text-xs text-orange-600 font-medium">{vendor?.business_name || 'KTU Vendor'}</span>
             </div>
-            <h4 className="font-medium text-ktu-deep-blue text-sm mb-1 line-clamp-1 group-hover:text-ktu-orange transition-colors">
-              {product.title}
+            <h4 className="font-medium text-gray-900 text-xs mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">
+              {product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title}
             </h4>
-            <p className="text-xs text-ktu-dark-grey line-clamp-2 mb-2">
-              {product.description}
-            </p>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center space-x-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs text-ktu-dark-grey">
+                <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                <span className="text-gray-600">
                   {productRating}
                 </span>
-                <span className="text-xs text-ktu-dark-grey">
+                <span className="text-gray-500">
                   ({ratingCount})
                 </span>
               </div>
-              <span className="text-xs text-ktu-dark-grey">
+              <span className="text-gray-500">
                 {itemsLeft} left
               </span>
             </div>
@@ -435,14 +432,10 @@ export default function VendorDetail() {
 
             <div className="p-6">
               {sortedProducts.length > 0 ? (
-                <div className="product-section-container">
-                  <div className="mobile-padding py-6">
-                    <div className="product-grid">
-                      {sortedProducts.map((product) => (
-                        <VendorHubProductCard key={product.id} product={product} />
-                      ))}
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {sortedProducts.map((product) => (
+                    <VendorHubProductCard key={product.id} product={product} />
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-12">
