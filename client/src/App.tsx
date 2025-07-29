@@ -88,7 +88,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={KTUHome} />
-      <Route path="/businesses" component={BusinessResources} />
+      {/* Remove duplicate /businesses route - consolidating to /student-businesses */}
       <Route path="/mentorship" component={MentorshipHub} />
       <Route path="/resources" component={BusinessResources} />
       <Route path="/resources/:id" component={ResourceDetail} />
