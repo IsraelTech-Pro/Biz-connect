@@ -801,10 +801,10 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
                 <span>{post.like_count}</span>
               </button>
               
-              <div className="flex items-center space-x-1">
+              <span className="flex items-center space-x-1">
                 <MessageSquare className="h-4 w-4" />
                 <span>{post.comment_count}</span>
-              </div>
+              </span>
             </div>
           </div>
 

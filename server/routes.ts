@@ -2448,6 +2448,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         programData.program_fee = parseFloat(programData.program_fee);
       }
       
+      // Handle empty string mentor_id (convert to null for UUID validation)
+      if (programData.mentor_id === '') {
+        programData.mentor_id = null;
+      }
+      
       const program = await storage.createProgram(programData);
       res.json(program);
     } catch (error) {
@@ -2481,6 +2486,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (updates.end_date && typeof updates.end_date === 'string') {
         updates.end_date = new Date(updates.end_date);
+      }
+      
+      // Handle empty string mentor_id (convert to null for UUID validation)
+      if (updates.mentor_id === '') {
+        updates.mentor_id = null;
       }
       
       // Convert numeric fields

@@ -435,6 +435,7 @@ const ProgramForm = ({ program, onClose, onSuccess }: {
       max_participants: parseInt(formData.max_participants),
       start_date: new Date(formData.start_date).toISOString(),
       end_date: new Date(formData.end_date).toISOString(),
+      mentor_id: formData.mentor_id || null, // Convert empty string to null for UUID validation
     };
     
     if (program) {
