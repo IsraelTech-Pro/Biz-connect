@@ -225,65 +225,24 @@ export default function KTUHome() {
     <div className="min-h-screen bg-ktu-grey">
       {/* Hero Section */}
       <section className="relative h-96 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className={`absolute inset-0 ${heroSlides[currentSlide].bgGradient} flex items-center justify-center`}
-          >
-            <div className="text-center text-white max-w-4xl px-4">
-              <motion.h1 
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-4xl md:text-6xl font-bold mb-4"
-              >
-                {heroSlides[currentSlide].title}
-              </motion.h1>
-              <motion.h2 
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-xl md:text-2xl font-medium mb-4"
-              >
-                {heroSlides[currentSlide].subtitle}
-              </motion.h2>
-              <motion.p 
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-lg mb-8 opacity-90"
-              >
-                {heroSlides[currentSlide].description}
-              </motion.p>
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                <Button size="lg" className="bg-white text-ktu-deep-blue hover:bg-gray-100 font-semibold px-8">
-                  {heroSlides[currentSlide].ctaText}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </motion.div>
+        <div className="absolute inset-0 ktu-hero-gradient flex items-center justify-center">
+          <div className="text-center text-white max-w-4xl px-4">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              WELCOME TO KTU BIZCONNECT
+            </h1>
+            <h2 className="text-xl md:text-2xl font-medium mb-4">
+              Your Gateway to Student Entrepreneurship
+            </h2>
+            <p className="text-lg mb-8 opacity-90">
+              Connect, collaborate, and grow your business at Koforidua Technical University
+            </p>
+            <div>
+              <Button size="lg" className="bg-white text-ktu-deep-blue hover:bg-gray-100 font-semibold px-8">
+                GET STARTED
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
             </div>
-          </motion.div>
-        </AnimatePresence>
-        
-        {/* Slide indicators */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentSlide ? 'bg-white' : 'bg-white/50'
-              }`}
-            />
-          ))}
+          </div>
         </div>
       </section>
 
