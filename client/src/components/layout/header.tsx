@@ -122,7 +122,7 @@ export const Header = () => {
                 className="flex items-center space-x-2 font-bold hover:text-ktu-orange transition-colors"
               >
                 <img 
-                  src="@assets/BizConnects Logo_1754063081249.png" 
+                  src="/attached_assets/BizConnects Logo_1754063081249.png" 
                   alt="BizConnect Logo" 
                   className="w-6 h-6"
                 />

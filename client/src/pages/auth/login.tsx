@@ -62,7 +62,7 @@ export default function Login() {
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img 
-              src="@assets/BizConnects Logo_1754063081249.png" 
+              src="/attached_assets/BizConnects Logo_1754063081249.png" 
               alt="BizConnect Logo" 
               className="w-16 h-16"
             />

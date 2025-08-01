@@ -71,7 +71,7 @@ export default function AdminLogin() {
           <CardHeader className="text-center pb-6">
             <div className="flex justify-center mb-4">
               <img 
-                src="@assets/BizConnects Logo_1754063081249.png" 
+                src="/attached_assets/BizConnects Logo_1754063081249.png" 
                 alt="BizConnect Logo" 
                 className="w-16 h-16"
               />
