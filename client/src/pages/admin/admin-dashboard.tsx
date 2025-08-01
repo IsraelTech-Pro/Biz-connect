@@ -99,7 +99,7 @@ export default function AdminDashboard() {
   const handleBusinessApproval = async (businessId: string, approved: boolean) => {
     const adminToken = localStorage.getItem('admin_token');
     try {
-      const response = await fetch(`/api/admin/vendors/${businessId}/status`, {
+      const response = await fetch(`/api/admin/businesses/${businessId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -163,11 +163,31 @@ export default function AdminDashboard() {
   };
 
   const handleBusinessView = (businessId: string) => {
-    setLocation(`/admin/businesses/${businessId}`);
+    const business = businesses.find(b => b.id === businessId);
+    if (business) {
+      alert(`Business Details:\n\nName: ${business.business_name}\nOwner: ${business.full_name}\nEmail: ${business.email}\nProducts: ${business.total_products}\nSales: ₵${business.total_sales}\nStatus: ${business.is_approved ? 'Approved' : 'Pending'}\nJoined: ${new Date(business.created_at).toLocaleDateString()}`);
+    }
   };
 
   const handleUserView = (userId: string) => {
-    setLocation(`/admin/users/${userId}`);
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      alert(`User Details:\n\nName: ${user.full_name}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.is_approved ? 'Active' : 'Inactive'}\nJoined: ${new Date(user.created_at).toLocaleDateString()}`);
+    }
+  };
+
+  const handleAddBusiness = () => {
+    toast({
+      title: "Add Business",
+      description: "Business creation form will be implemented soon. For now, users can register as vendors through the vendor registration page.",
+    });
+  };
+
+  const handleAddUser = () => {
+    toast({
+      title: "Add User",
+      description: "User creation form will be implemented soon. For now, users can register through the normal registration page.",
+    });
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -604,7 +624,10 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="text-lg text-ktu-deep-blue">Student Businesses Management</span>
-                    <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
+                    <Button 
+                      className="bg-ktu-orange hover:bg-ktu-orange-light text-white"
+                      onClick={handleAddBusiness}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add Business
                     </Button>
@@ -673,7 +696,10 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span className="text-lg text-ktu-deep-blue">User Management</span>
-                    <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
+                    <Button 
+                      className="bg-ktu-orange hover:bg-ktu-orange-light text-white"
+                      onClick={handleAddUser}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Add User
                     </Button>

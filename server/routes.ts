@@ -2260,6 +2260,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin CRUD endpoints for business management
+  app.patch('/api/admin/businesses/:businessId/status', authenticateAdminToken, async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const { approved } = req.body;
+      
+      if (typeof approved !== 'boolean') {
+        return res.status(400).json({ message: 'Invalid approval status' });
+      }
+      
+      const updatedUser = await storage.updateUser(businessId, { is_approved: approved });
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating business status:', error);
+      res.status(500).json({ message: 'Failed to update business status' });
+    }
+  });
+
   app.delete('/api/admin/businesses/:businessId', authenticateAdminToken, async (req, res) => {
     try {
       const { businessId } = req.params;
