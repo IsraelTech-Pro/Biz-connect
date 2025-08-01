@@ -97,24 +97,7 @@ const ResourceCard = ({ resource, index }: { resource: Resource; index: number }
               {resource.description}
             </p>
             
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4 text-xs text-ktu-dark-grey">
-                <div className="flex items-center">
-                  <Eye className="h-3 w-3 mr-1" />
-                  {resource.views || 0}
-                </div>
-                <div className="flex items-center">
-                  <Download className="h-3 w-3 mr-1" />
-                  {resource.downloads || 0}
-                </div>
-                {resource.estimated_time && (
-                  <div className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {resource.estimated_time}
-                  </div>
-                )}
-              </div>
-            </div>
+            
 
             {/* Files and Links Count */}
             <div className="flex items-center space-x-4 mb-4 text-xs text-ktu-dark-grey">
