@@ -6,9 +6,9 @@ export const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h4 className="text-xl font-bold mb-4">VendorHub</h4>
+            <h4 className="text-xl font-bold mb-4">KTU BizConnect</h4>
             <p className="text-gray-400 mb-4">
-              Ghana's leading multi-vendor eCommerce platform. Connect with local vendors and discover amazing products.
+              Connecting KTU students and businesses. Discover amazing products and services from student entrepreneurs at Koforidua Technical University.
             </p>
             <div className="flex space-x-4">
               <i className="fab fa-facebook text-orange-500 hover:text-orange-600 cursor-pointer"></i>
@@ -30,7 +30,7 @@ export const Footer = () => {
           <div>
             <h5 className="font-semibold mb-4">For Vendors</h5>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/auth/register"><span className="hover:text-orange-500 cursor-pointer">Sell on VendorHub</span></Link></li>
+              <li><Link href="/auth/register"><span className="hover:text-orange-500 cursor-pointer">Start Your Business</span></Link></li>
               <li><a href="#" className="hover:text-orange-500">Vendor Guidelines</a></li>
               <li><a href="#" className="hover:text-orange-500">Payout Information</a></li>
               <li><a href="#" className="hover:text-orange-500">Vendor Support</a></li>
@@ -41,7 +41,7 @@ export const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 VendorHub. All rights reserved. Powered by Paystack & Supabase.</p>
+          <p>&copy; 2024 KTU BizConnect. All rights reserved. Empowering KTU student entrepreneurs.</p>
         </div>
       </div>
     </footer>
