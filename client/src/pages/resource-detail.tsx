@@ -226,22 +226,7 @@ export default function ResourceDetail() {
                       </div>
                       <div>
                         <h1 className="text-2xl font-bold text-ktu-deep-blue mb-2">{resource.title}</h1>
-                        <div className="flex items-center space-x-4 text-sm text-ktu-dark-grey">
-                          <div className="flex items-center">
-                            <Eye className="h-4 w-4 mr-1" />
-                            {resource.views} views
-                          </div>
-                          <div className="flex items-center">
-                            <Download className="h-4 w-4 mr-1" />
-                            {resource.downloads} downloads
-                          </div>
-                          {resource.estimated_time && (
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {resource.estimated_time}
-                            </div>
-                          )}
-                        </div>
+                        
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
