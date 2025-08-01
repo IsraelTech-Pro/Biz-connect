@@ -306,16 +306,25 @@ export default function ProductsListing() {
       <section className="bg-white py-8 mt-8">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-xl font-bold text-ktu-deep-blue mb-3">
-            Have a Product to Sell?
+            Discover Student Innovation
           </h2>
           <p className="text-ktu-dark-grey mb-4 max-w-xl mx-auto">
-            Join hundreds of KTU student entrepreneurs and start selling your products today
+            Browse products from talented KTU student entrepreneurs. Support local innovation and find unique items created by your fellow students.
           </p>
-          <Link href="/business/register">
-            <Button className="bg-ktu-orange hover:bg-ktu-orange-light">
-              Start Selling Now
-            </Button>
-          </Link>
+          <div className="flex justify-center items-center space-x-6 text-sm text-ktu-dark-grey mt-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span>Quality Products</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Student Made</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <span>Local Support</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>
