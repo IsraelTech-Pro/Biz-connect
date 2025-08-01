@@ -161,9 +161,11 @@ export const Header = () => {
                 </div>
               </Button>
               <Link to="/" className="flex items-center space-x-2 group">
-                <div className="bg-ktu-orange p-1.5 lg:p-2 rounded">
-                  <Store className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
-                </div>
+                <img 
+                  src="/bizconnect-logo.png" 
+                  alt="BizConnect Logo" 
+                  className="h-8 w-8 lg:h-10 lg:w-10"
+                />
                 <span className="text-xl lg:text-2xl font-bold text-ktu-deep-blue">
                   KTU <span className="text-ktu-orange">BizConnect</span>
                 </span>
