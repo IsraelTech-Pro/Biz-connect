@@ -382,20 +382,6 @@ export default function AdminDashboard() {
       action: "/admin/community/discussions"
     },
     {
-      title: "Manage Mentors",
-      description: "View, add, and manage business mentors",
-      icon: BookOpen,
-      color: "bg-green-600",
-      action: "/admin/mentors"
-    },
-    {
-      title: "Manage Programs",
-      description: "Create and manage training programs",
-      icon: Target,
-      color: "bg-ktu-deep-blue",
-      action: "/admin/programs"
-    },
-    {
       title: "Manage Resources",
       description: "Add and organize business resources",
       icon: FileText,

@@ -16,13 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 
 export default function AddMentor() {
   const [, navigate] = useLocation();
-  const { token } = useAuth();
+  const adminToken = localStorage.getItem('admin_token');
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -55,7 +54,7 @@ export default function AddMentor() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${adminToken}`
         },
         body: JSON.stringify(formData)
       });
