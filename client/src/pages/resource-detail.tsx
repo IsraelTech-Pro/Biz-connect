@@ -360,41 +360,11 @@ export default function ResourceDetail() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="ktu-card">
-                <CardHeader>
-                  <CardTitle className="text-ktu-deep-blue">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    className="w-full bg-ktu-orange hover:bg-ktu-orange-light"
-                    disabled={!resource.files || resource.files.length === 0}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download All Files
-                  </Button>
-                  <Button variant="outline" className="w-full border-ktu-deep-blue text-ktu-deep-blue">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Save for Later
-                  </Button>
-                  <Button variant="outline" className="w-full border-ktu-orange text-ktu-orange">
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share Resource
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-
             {/* Resource Info */}
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.1 }}
             >
               <Card className="ktu-card">
                 <CardHeader>
@@ -437,7 +407,7 @@ export default function ResourceDetail() {
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.2 }}
             >
               <Card className="ktu-card">
                 <CardHeader>
