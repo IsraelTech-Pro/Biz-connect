@@ -110,7 +110,6 @@ export default function ProductDetail() {
   const currentPrice = parseFloat(product?.price || "0");
   const rating = product?.rating_average || "0";
   const ratingCount = product?.rating_count || "0";
-  const itemsLeft = product?.stock_quantity || 0;
 
   if (isLoading) {
     return (
@@ -242,19 +241,14 @@ export default function ProductDetail() {
                       </>
                     )}
                   </div>
-                  <p className="text-sm text-red-600 font-medium">
-                    {itemsLeft} items left
-                  </p>
+
                 </div>
 
                 
 
                 {/* Purchase Actions */}
                 <div className="space-y-4">
-                  <div className="text-sm text-gray-600 mb-4">
-                    <span className="font-medium text-gray-800">Stock: </span>
-                    {product.stock_quantity} items available
-                  </div>
+
 
                   <div className="flex space-x-3">
                     <Button
@@ -409,12 +403,7 @@ export default function ProductDetail() {
                               </span>
                             </div>
                           )}
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">Stock:</span>
-                            <span className="font-medium">
-                              {product.stock_quantity} available
-                            </span>
-                          </div>
+
                         </div>
                       </div>
                     </div>
