@@ -20,15 +20,22 @@ const BusinessCard = ({ business }: { business: any }) => {
     <Link href={`/business/${business.id}`} className="block h-full">
       <div className="ktu-card animate-card-lift h-full group">
         <div className="relative overflow-hidden">
-          <img 
-            src={business.image || "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop"} 
-            alt={business.name}
-            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          <div className="absolute top-2 right-2">
-            <span className="bg-white/90 text-ktu-deep-blue px-2 py-1 rounded text-xs font-medium">
-              {business.categoryLabel || business.category}
-            </span>
+          <div 
+            className="w-full h-40 group-hover:scale-105 transition-transform duration-300"
+            style={{
+              backgroundImage: business.banner_url && typeof business.banner_url === 'object' && business.banner_url.url 
+                ? `url(${business.banner_url.url})` 
+                : 'linear-gradient(to right, #fb923c, #ea580c)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            <div className="absolute inset-0 bg-black/20"></div>
+            <div className="absolute top-2 right-2">
+              <span className="bg-white/90 text-ktu-deep-blue px-2 py-1 rounded text-xs font-medium">
+                {business.categoryLabel || business.category}
+              </span>
+            </div>
           </div>
         </div>
         <div className="p-4">
@@ -276,6 +283,7 @@ export default function KTUHome() {
                 name: business.business_name || business.full_name,
                 description: business.business_description || "KTU Student Business",
                 category: business.business_category || "Student Business",
+                banner_url: business.banner_url,
                 image: (business.profile_picture && Array.isArray(business.profile_picture) && business.profile_picture[0]?.url) || 
                        `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop`
               }} />
