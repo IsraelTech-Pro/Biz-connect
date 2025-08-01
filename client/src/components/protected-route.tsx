@@ -11,11 +11,13 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !user && !token) {
+    // Only redirect if loading is complete and neither user nor token exist
+    if (!isLoading && (!user || !token)) {
       setLocation('/auth/login');
     }
   }, [user, token, isLoading, setLocation]);
 
+  // Show loading spinner while authentication is being checked
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -27,6 +29,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
+  // Ensure both user and token exist before rendering protected content
   if (!user || !token) {
     return null; // Will redirect to login via useEffect
   }

@@ -26,13 +26,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('authToken');
-    if (storedToken) {
-      setToken(storedToken);
-      fetchUser(storedToken);
-    } else {
-      setIsLoading(false);
-    }
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedToken) {
+        setToken(storedToken);
+        await fetchUser(storedToken);
+      } else {
+        setIsLoading(false);
+      }
+    };
+    
+    initializeAuth();
   }, []);
 
   const fetchUser = async (authToken: string) => {
@@ -47,13 +51,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userData = await response.json();
         setUser(userData);
       } else {
+        console.warn('Auth token invalid, clearing auth state');
+        // Clear auth state if token is invalid
         localStorage.removeItem('authToken');
         setToken(null);
+        setUser(null);
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
+      // Clear auth state on error
       localStorage.removeItem('authToken');
       setToken(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -74,9 +83,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const { user: userData, token: authToken } = await response.json();
-    setUser(userData);
-    setToken(authToken);
+    
+    // Set token first, then user - this ensures immediate authentication state
     localStorage.setItem('authToken', authToken);
+    setToken(authToken);
+    setUser(userData);
   };
 
   const register = async (userData: any) => {
@@ -94,9 +105,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const { user: newUser, token: authToken } = await response.json();
-    setUser(newUser);
-    setToken(authToken);
+    
+    // Set token first, then user
     localStorage.setItem('authToken', authToken);
+    setToken(authToken);
+    setUser(newUser);
   };
 
   const logout = () => {

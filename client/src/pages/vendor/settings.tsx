@@ -144,7 +144,9 @@ export default function VendorSettings() {
         momo_number: displayPhoneNumber(data.momo_number || ''),
         email: data.email || '',
         phone: displayPhoneNumber(data.phone || ''),
-        whatsapp: displayPhoneNumber(data.whatsapp || '')
+        whatsapp: displayPhoneNumber(data.whatsapp || ''),
+        profile_picture: data.profile_picture || null,
+        banner_url: data.banner_url || null
       });
       
       setLogoFile(null);
