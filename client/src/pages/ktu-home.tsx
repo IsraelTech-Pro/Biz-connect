@@ -169,7 +169,7 @@ export default function KTUHome() {
       subtitle: "Browse & Support", 
       icon: Store,
       color: "ktu-hero-gradient",
-      link: "/businesses"
+      link: "/student-businesses"
     },
     { 
       title: "MENTORSHIP HUB", 
