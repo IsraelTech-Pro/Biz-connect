@@ -457,12 +457,6 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex space-x-4">
-              <Link to="/admin/reports">
-                <Button variant="outline" className="text-ktu-deep-blue hover:text-ktu-orange">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View Reports
-                </Button>
-              </Link>
               <Link to="/admin/settings">
                 <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
                   <Settings className="w-4 h-4 mr-2" />
