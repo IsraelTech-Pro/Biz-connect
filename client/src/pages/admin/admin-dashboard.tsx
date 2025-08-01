@@ -20,12 +20,14 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  MessageCircle
+  MessageCircle,
+  X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 // Removed useAuth import - admin has separate authentication
 import { useToast } from '@/hooks/use-toast';
 import { Link, useLocation } from 'wouter';
@@ -68,6 +70,9 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [adminUser, setAdminUser] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [modalType, setModalType] = useState<'business' | 'user'>('business');
   
   // Get admin token once at component level
   const adminToken = localStorage.getItem('admin_token');
@@ -165,29 +170,19 @@ export default function AdminDashboard() {
   const handleBusinessView = (businessId: string) => {
     const business = businesses.find(b => b.id === businessId);
     if (business) {
-      alert(`Business Details:\n\nName: ${business.business_name}\nOwner: ${business.full_name}\nEmail: ${business.email}\nProducts: ${business.total_products}\nSales: ₵${business.total_sales}\nStatus: ${business.is_approved ? 'Approved' : 'Pending'}\nJoined: ${new Date(business.created_at).toLocaleDateString()}`);
+      setSelectedItem(business);
+      setModalType('business');
+      setViewModalOpen(true);
     }
   };
 
   const handleUserView = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (user) {
-      alert(`User Details:\n\nName: ${user.full_name}\nEmail: ${user.email}\nRole: ${user.role}\nStatus: ${user.is_approved ? 'Active' : 'Inactive'}\nJoined: ${new Date(user.created_at).toLocaleDateString()}`);
+      setSelectedItem(user);
+      setModalType('user');
+      setViewModalOpen(true);
     }
-  };
-
-  const handleAddBusiness = () => {
-    toast({
-      title: "Add Business",
-      description: "Business creation form will be implemented soon. For now, users can register as vendors through the vendor registration page.",
-    });
-  };
-
-  const handleAddUser = () => {
-    toast({
-      title: "Add User",
-      description: "User creation form will be implemented soon. For now, users can register through the normal registration page.",
-    });
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -622,16 +617,7 @@ export default function AdminDashboard() {
             <TabsContent value="businesses" className="mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-lg text-ktu-deep-blue">Student Businesses Management</span>
-                    <Button 
-                      className="bg-ktu-orange hover:bg-ktu-orange-light text-white"
-                      onClick={handleAddBusiness}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Business
-                    </Button>
-                  </CardTitle>
+                  <CardTitle className="text-lg text-ktu-deep-blue">Student Businesses Management</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -694,16 +680,7 @@ export default function AdminDashboard() {
             <TabsContent value="users" className="mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="text-lg text-ktu-deep-blue">User Management</span>
-                    <Button 
-                      className="bg-ktu-orange hover:bg-ktu-orange-light text-white"
-                      onClick={handleAddUser}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add User
-                    </Button>
-                  </CardTitle>
+                  <CardTitle className="text-lg text-ktu-deep-blue">User Management</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -756,6 +733,89 @@ export default function AdminDashboard() {
           </Tabs>
         </motion.div>
       </div>
+
+      {/* View Details Modal */}
+      <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-ktu-deep-blue">
+              {modalType === 'business' ? 'Business Details' : 'User Details'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedItem && modalType === 'business' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Business Name</label>
+                  <p className="text-lg font-semibold text-gray-900">{selectedItem.business_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Owner</label>
+                  <p className="text-lg font-semibold text-gray-900">{selectedItem.full_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-gray-900">{selectedItem.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <Badge className={selectedItem.is_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+                    {selectedItem.is_approved ? 'Approved' : 'Pending'}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Total Products</label>
+                  <p className="text-lg font-semibold text-gray-900">{selectedItem.total_products}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Total Sales</label>
+                  <p className="text-lg font-semibold text-gray-900">₵{selectedItem.total_sales}</p>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-gray-600">Joined Date</label>
+                  <p className="text-gray-900">{new Date(selectedItem.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {selectedItem && modalType === 'user' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Full Name</label>
+                  <p className="text-lg font-semibold text-gray-900">{selectedItem.full_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-gray-900">{selectedItem.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Role</label>
+                  <Badge className={
+                    selectedItem.role === 'admin' ? 'bg-red-100 text-red-800' :
+                    selectedItem.role === 'vendor' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
+                  }>
+                    {selectedItem.role}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <Badge className={selectedItem.is_approved ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                    {selectedItem.is_approved ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium text-gray-600">Joined Date</label>
+                  <p className="text-gray-900">{new Date(selectedItem.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
