@@ -3,7 +3,6 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   Star,
-  ShoppingCart,
   Heart,
   Share2,
   MapPin,
@@ -13,21 +12,19 @@ import {
   ChevronRight,
   Check,
   ArrowLeft,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, User } from "@shared/schema";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
-  const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const { addItem } = useCart();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -50,23 +47,7 @@ export default function ProductDetail() {
     enabled: !!product?.vendor_id,
   });
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    addItem(product, quantity);
-    toast({
-      title: "Added to cart",
-      description: `${quantity} ${product.title}(s) added to your cart.`,
-    });
-  };
 
-  const handleBuyNow = () => {
-    if (!product) return;
-    addItem(product, quantity);
-    toast({
-      title: "Proceeding to checkout",
-      description: `${quantity} ${product.title}(s) added to cart. Redirecting to checkout...`,
-    });
-  };
 
   const handleShare = async () => {
     if (!product) return;
@@ -115,7 +96,7 @@ export default function ProductDetail() {
   };
 
   // Get product images from database
-  const productImages = product?.product_images
+  const productImages = product?.product_images && Array.isArray(product.product_images)
     ? product.product_images.map((img: any) => img.url)
     : product?.image_url
       ? [product.image_url]
@@ -304,53 +285,21 @@ export default function ProductDetail() {
                   </div>
                 </div>
 
-                {/* Quantity & Actions */}
+                {/* Purchase Actions */}
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <label className="text-sm font-medium">Quantity:</label>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      >
-                        -
-                      </Button>
-                      <span className="px-4 py-2 border rounded">
-                        {quantity}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setQuantity(
-                            Math.min(product.stock_quantity, quantity + 1),
-                          )
-                        }
-                      >
-                        +
-                      </Button>
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {product.stock_quantity} items available
-                    </span>
+                  <div className="text-sm text-gray-600 mb-4">
+                    <span className="font-medium text-gray-800">Stock: </span>
+                    {product.stock_quantity} items available
                   </div>
 
                   <div className="flex space-x-3">
                     <Button
-                      onClick={handleAddToCart}
+                      onClick={() => window.location.href = `/contact-vendor?productId=${product.id}`}
                       size="lg"
                       className="flex-1 btn-orange-primary"
                     >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to Cart
-                    </Button>
-                    <Button
-                      onClick={handleBuyNow}
-                      size="lg"
-                      className="flex-1 btn-orange-secondary"
-                    >
-                      Buy Now
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      Contact Seller
                     </Button>
                   </div>
 

@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { CartProvider } from "@/contexts/cart-context";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { ShoppingCartModal } from "@/components/shopping-cart";
+
 import { PaymentCallbackHandler } from "@/components/payment-callback-handler";
 import { PaymentSuccessNotice } from "@/components/payment-success-notice";
 import AdminApp from "./admin-app";
@@ -134,7 +134,7 @@ function Router() {
       <Route path="/mobile-money" component={MobileMoney} />
       
       {/* Contact page */}
-      <Route path="/contact-vendor/:vendorId" component={ContactVendor} />
+      <Route path="/contact-vendor" component={ContactVendor} />
       
       <Route component={NotFound} />
     </Switch>
@@ -164,7 +164,6 @@ function App() {
               <Footer />
             </div>
             <Toaster />
-            <ShoppingCartModal />
           </CartProvider>
         </AuthProvider>
       </TooltipProvider>

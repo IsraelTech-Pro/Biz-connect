@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Search,
-  ShoppingCart,
   User,
   Menu,
   X,
@@ -16,7 +15,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
-import { useCart } from "@/contexts/cart-context";
 
 const categories = [
   { name: "Tech & Innovation", icon: "💻", color: "bg-ktu-deep-blue" },
@@ -35,7 +33,6 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { user, logout } = useAuth();
-  const { getItemCount } = useCart();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,27 +253,7 @@ export const Header = () => {
                 </Link>
               )}
 
-              {/* Cart */}
-              <Link to="/cart">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 hover:bg-orange-50 px-2 py-2 relative"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  <div className="text-left hidden lg:block">
-                    <div className="text-xs text-gray-500">Cart</div>
-                    <div className="text-sm font-medium">
-                      {getItemCount() > 0 ? `${getItemCount()}` : "0"}
-                    </div>
-                  </div>
-                  {getItemCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 btn-orange-primary text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                      {getItemCount()}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+
             </div>
           </div>
         </div>
@@ -384,7 +361,7 @@ export const Header = () => {
                 </Link>
               )}
               <Link
-                to="/businesses"
+                to="/student-businesses"
                 className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
                 onClick={() => setIsMenuOpen(false)}
               >
