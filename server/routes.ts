@@ -91,6 +91,15 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
       if (!user) {
         return res.status(403).json({ message: 'User not found' });
       }
+      
+      // Check if user account is still approved
+      if (!user.is_approved) {
+        return res.status(403).json({ 
+          message: 'Your account is not approved by the admin. Please contact the administrator for account activation.',
+          code: 'ACCOUNT_NOT_APPROVED'
+        });
+      }
+      
       req.user = user;
       next();
     } catch (error) {
@@ -234,8 +243,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword
       });
 
-      const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET);
-      res.json({ user: { ...user, password: undefined }, token });
+      // Since new users need admin approval, don't create a token or log them in immediately
+      res.json({ 
+        user: { ...user, password: undefined }, 
+        message: 'Account created successfully! Your account is pending admin approval. You will be able to log in once an administrator activates your account.',
+        requiresApproval: true
+      });
     } catch (error) {
       console.error('Registration error:', error);
       res.status(400).json({ message: 'Invalid user data', error: error.message });
@@ -256,6 +269,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!user || !await bcrypt.compare(password, user.password)) {
         return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Check if user account is approved by admin
+      if (!user.is_approved) {
+        return res.status(403).json({ 
+          message: 'Your account is not approved by the admin. Please contact the administrator for account activation.',
+          code: 'ACCOUNT_NOT_APPROVED'
+        });
       }
 
       const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET);

@@ -67,17 +67,27 @@ export default function Register() {
       await register(userData);
       toast({
         title: "Account Created!",
-        description: formData.role === 'vendor' 
-          ? "Your vendor account has been created and is pending approval." 
-          : "Welcome to VendorHub!",
+        description: "Welcome to KTU BizConnect!",
       });
       setLocation('/');
     } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: error instanceof Error ? error.message : "Failed to create account",
-        variant: "destructive"
-      });
+      const errorMessage = error instanceof Error ? error.message : "Failed to create account";
+      
+      // Check if it's an approval message (success but needs approval)
+      if (errorMessage.includes('pending admin approval')) {
+        toast({
+          title: "Account Created Successfully!",
+          description: errorMessage,
+        });
+        // Redirect to login page so they can try logging in later
+        setLocation('/auth/login');
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }

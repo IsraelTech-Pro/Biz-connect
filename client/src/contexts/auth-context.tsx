@@ -51,8 +51,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userData = await response.json();
         setUser(userData);
       } else {
-        console.warn('Auth token invalid, clearing auth state');
-        // Clear auth state if token is invalid
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Check if it's an approval error
+        if (response.status === 403 && errorData.code === 'ACCOUNT_NOT_APPROVED') {
+          console.warn('Account not approved by admin');
+        } else {
+          console.warn('Auth token invalid, clearing auth state');
+        }
+        
+        // Clear auth state regardless of error type
         localStorage.removeItem('authToken');
         setToken(null);
         setUser(null);
@@ -104,12 +112,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error(error.message);
     }
 
-    const { user: newUser, token: authToken } = await response.json();
+    const result = await response.json();
     
-    // Set token first, then user
-    localStorage.setItem('authToken', authToken);
-    setToken(authToken);
-    setUser(newUser);
+    // Check if account requires approval (new behavior)
+    if (result.requiresApproval) {
+      // Don't set token or user since they need admin approval
+      // Just return the success message to show to user
+      throw new Error(result.message);
+    }
+    
+    // Old behavior for already approved accounts (shouldn't happen with new flow)
+    if (result.token) {
+      localStorage.setItem('authToken', result.token);
+      setToken(result.token);
+      setUser(result.user);
+    }
   };
 
   const logout = () => {
