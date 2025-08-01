@@ -457,12 +457,6 @@ export default function AdminDashboard() {
               </p>
             </div>
             <div className="flex space-x-4">
-              <Link to="/admin/settings">
-                <Button className="bg-ktu-orange hover:bg-ktu-orange-light text-white">
-                  <Settings className="w-4 h-4 mr-2" />
-                  System Settings
-                </Button>
-              </Link>
             </div>
           </div>
         </motion.div>
