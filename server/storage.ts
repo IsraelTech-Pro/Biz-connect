@@ -1,4 +1,4 @@
-import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, adminUsers, discussions, comments, likes, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource, type AdminUser, type InsertAdminUser, type Discussion, type InsertDiscussion, type Comment, type InsertComment, type Like, type InsertLike } from "@shared/schema";
+import { users, products, orders, payouts, platform_settings, support_requests, vendor_support_requests, payments, transactions, mentors, programs, resources, adminUsers, discussions, comments, likes, businessRatings, type User, type InsertUser, type Product, type InsertProduct, type Order, type InsertOrder, type Payout, type InsertPayout, type PlatformSettings, type SupportRequest, type InsertSupportRequest, type VendorSupportRequest, type InsertVendorSupportRequest, type Payment, type InsertPayment, type Mentor, type InsertMentor, type Program, type InsertProgram, type Resource, type InsertResource, type AdminUser, type InsertAdminUser, type Discussion, type InsertDiscussion, type Comment, type InsertComment, type Like, type InsertLike, type BusinessRating, type InsertBusinessRating } from "@shared/schema";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, and, desc, sql, like, or } from "drizzle-orm";
 import pg from "pg";
@@ -164,6 +164,17 @@ export interface IStorage {
     totalPosts: number;
     totalComments: number;
     totalLikes: number;
+  }>;
+  
+  // Business Ratings
+  getBusinessRatings(businessId: string): Promise<BusinessRating[]>;
+  getBusinessRating(userId: string, businessId: string): Promise<BusinessRating | undefined>;
+  createBusinessRating(rating: InsertBusinessRating): Promise<BusinessRating>;
+  updateBusinessRating(id: string, rating: Partial<InsertBusinessRating>): Promise<BusinessRating>;
+  deleteBusinessRating(id: string): Promise<void>;
+  getBusinessRatingStats(businessId: string): Promise<{
+    averageRating: number;
+    totalRatings: number;
   }>;
 }
 
@@ -1014,6 +1025,53 @@ export class PostgresStorage implements IStorage {
       totalPosts: Number(postsResult[0]?.count || 0),
       totalComments: Number(commentsResult[0]?.count || 0),
       totalLikes: Number(likesResult[0]?.count || 0)
+    };
+  }
+
+  // Business Rating methods
+  async getBusinessRatings(businessId: string): Promise<BusinessRating[]> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(businessRatings).where(eq(businessRatings.business_id, businessId));
+    return result;
+  }
+
+  async getBusinessRating(userId: string, businessId: string): Promise<BusinessRating | undefined> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select().from(businessRatings)
+      .where(and(eq(businessRatings.user_id, userId), eq(businessRatings.business_id, businessId)));
+    return result[0];
+  }
+
+  async createBusinessRating(rating: InsertBusinessRating): Promise<BusinessRating> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.insert(businessRatings).values(rating).returning();
+    return result[0];
+  }
+
+  async updateBusinessRating(id: string, rating: Partial<InsertBusinessRating>): Promise<BusinessRating> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.update(businessRatings)
+      .set({ ...rating, updated_at: new Date() })
+      .where(eq(businessRatings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteBusinessRating(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.delete(businessRatings).where(eq(businessRatings.id, id));
+  }
+
+  async getBusinessRatingStats(businessId: string): Promise<{ averageRating: number; totalRatings: number }> {
+    if (!db) throw new Error('Database not available');
+    const result = await db.select({
+      averageRating: sql<number>`AVG(${businessRatings.rating})`,
+      totalRatings: sql<number>`COUNT(*)`
+    }).from(businessRatings).where(eq(businessRatings.business_id, businessId));
+    
+    return {
+      averageRating: Number(result[0]?.averageRating || 0),
+      totalRatings: Number(result[0]?.totalRatings || 0)
     };
   }
 }

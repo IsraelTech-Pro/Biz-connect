@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Store, MapPin, Star, Package, Users, ShoppingBag, ArrowLeft, Grid3X3, List, Share2, Copy, Download, QrCode, Heart } from "lucide-react";
 import { User, Product } from "@/shared/schema";
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/auth-context";
 import QRCode from 'qrcode';
 
 export default function VendorDetail() {
@@ -22,8 +24,12 @@ export default function VendorDetail() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: vendor, isLoading: vendorLoading } = useQuery({
     queryKey: [`/api/users/${id}`],
@@ -34,8 +40,95 @@ export default function VendorDetail() {
     queryKey: ["/api/products"],
   });
 
+  // Rating-related queries
+  const { data: ratingStats } = useQuery({
+    queryKey: [`/api/businesses/${id}/rating-stats`],
+    enabled: !!id,
+  });
+
+  const { data: userRating } = useQuery({
+    queryKey: [`/api/businesses/${id}/user-rating`],
+    enabled: !!id && !!user,
+  });
+
+  // Rating mutations
+  const rateMutation = useMutation({
+    mutationFn: (rating: number) => apiRequest(`/api/businesses/${id}/rate`, {
+      method: 'POST',
+      body: { rating }
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${id}/rating-stats`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${id}/user-rating`] });
+      setShowRatingModal(false);
+      setSelectedRating(0);
+      toast({
+        title: "Success",
+        description: "Your rating has been submitted!"
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to submit rating. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteRatingMutation = useMutation({
+    mutationFn: () => apiRequest(`/api/businesses/${id}/rating`, {
+      method: 'DELETE'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${id}/rating-stats`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${id}/user-rating`] });
+      toast({
+        title: "Success",
+        description: "Your rating has been removed."
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to remove rating. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Get the store URL for sharing
   const storeUrl = `${window.location.origin}/vendor/${id}`;
+
+  // Rating functions
+  const handleRateClick = () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to rate this business.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setSelectedRating(userRating?.rating || 0);
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmit = () => {
+    if (selectedRating < 1 || selectedRating > 5) {
+      toast({
+        title: "Invalid Rating",
+        description: "Please select a rating between 1 and 5 stars.",
+        variant: "destructive"
+      });
+      return;
+    }
+    rateMutation.mutate(selectedRating);
+  };
+
+  const handleRemoveRating = () => {
+    deleteRatingMutation.mutate();
+  };
 
   // Generate QR code
   const generateQRCode = async () => {
@@ -170,9 +263,9 @@ export default function VendorDetail() {
   const productsList = products || [];
   const vendorProducts = productsList.filter((product: Product) => product.vendor_id === id);
 
-  const rating = (Math.random() * 2 + 3).toFixed(1);
-  const sales = Math.floor(Math.random() * 1000) + 100;
-  const followers = Math.floor(Math.random() * 500) + 100;
+  // Get real rating data from the database
+  const averageRating = ratingStats?.averageRating || 0;
+  const totalRatings = ratingStats?.totalRatings || 0;
 
   const sortOptions = [
     { value: 'popular', label: 'Most Popular' },
@@ -327,36 +420,97 @@ export default function VendorDetail() {
               </div>
             </div>
 
-            {/* Store Stats */}
+            {/* Store Stats and Rating */}
             <div className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-orange-600 mb-2">
-                    <Package className="w-5 h-5" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Business Stats */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Overview</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-center text-orange-600 mb-2">
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">{vendorProducts.length}</div>
+                      <div className="text-sm text-gray-500">Products</div>
+                    </div>
+                    <div className="text-center p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-center text-yellow-600 mb-2">
+                        <Star className="w-5 h-5" />
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {averageRating > 0 ? averageRating.toFixed(1) : "N/A"}
+                      </div>
+                      <div className="text-sm text-gray-500">Rating</div>
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{vendorProducts.length}</div>
-                  <div className="text-sm text-gray-500">Products</div>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-yellow-600 mb-2">
-                    <Star className="w-5 h-5" />
+
+                {/* Rating Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Rate This Business</h3>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star 
+                              key={star}
+                              className={`w-5 h-5 ${
+                                star <= averageRating 
+                                  ? 'fill-yellow-400 text-yellow-400' 
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {totalRatings > 0 ? `${totalRatings} rating${totalRatings !== 1 ? 's' : ''}` : 'No ratings yet'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {user ? (
+                      <div className="space-y-2">
+                        {userRating ? (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">
+                              Your rating: {userRating.rating} star{userRating.rating !== 1 ? 's' : ''}
+                            </span>
+                            <div className="space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleRateClick}
+                                className="text-xs"
+                              >
+                                Update
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={handleRemoveRating}
+                                className="text-xs text-red-600 hover:text-red-700"
+                                disabled={deleteRatingMutation.isPending}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button 
+                            onClick={handleRateClick}
+                            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                            size="sm"
+                          >
+                            Rate This Business
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Login to rate this business</p>
+                    )}
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">{rating}</div>
-                  <div className="text-sm text-gray-500">Rating</div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-green-600 mb-2">
-                    <Users className="w-5 h-5" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{followers}</div>
-                  <div className="text-sm text-gray-500">Followers</div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center text-blue-600 mb-2">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">{sales}</div>
-                  <div className="text-sm text-gray-500">Sales</div>
                 </div>
               </div>
 
@@ -548,6 +702,65 @@ export default function VendorDetail() {
                   <li>• When someone scans the QR code, they'll visit your store</li>
                   <li>• Perfect for business cards, flyers, or social media</li>
                 </ul>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rating Modal */}
+        <Dialog open={showRatingModal} onOpenChange={setShowRatingModal}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Rate {vendor?.business_name || "this business"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  How would you rate your experience with this business?
+                </p>
+                <div className="flex justify-center space-x-1 mb-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setSelectedRating(star)}
+                      className="p-1 hover:scale-110 transition-transform"
+                      data-testid={`rating-star-${star}`}
+                    >
+                      <Star 
+                        className={`w-8 h-8 ${
+                          star <= selectedRating 
+                            ? 'fill-yellow-400 text-yellow-400' 
+                            : 'text-gray-300 hover:text-yellow-200'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {selectedRating > 0 && (
+                  <p className="text-sm text-gray-600">
+                    You selected {selectedRating} star{selectedRating !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowRatingModal(false);
+                    setSelectedRating(0);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleRatingSubmit}
+                  disabled={selectedRating === 0 || rateMutation.isPending}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  data-testid="submit-rating"
+                >
+                  {rateMutation.isPending ? "Submitting..." : "Submit Rating"}
+                </Button>
               </div>
             </div>
           </DialogContent>

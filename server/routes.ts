@@ -3197,5 +3197,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Business Rating API Routes
+  app.get('/api/businesses/:businessId/ratings', async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const ratings = await storage.getBusinessRatings(businessId);
+      res.json(ratings);
+    } catch (error) {
+      console.error('Error fetching business ratings:', error);
+      res.status(500).json({ message: 'Failed to fetch business ratings' });
+    }
+  });
+
+  app.get('/api/businesses/:businessId/rating-stats', async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const stats = await storage.getBusinessRatingStats(businessId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching business rating stats:', error);
+      res.status(500).json({ message: 'Failed to fetch business rating stats' });
+    }
+  });
+
+  app.get('/api/businesses/:businessId/user-rating', authenticateToken, async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const user = req.user as any;
+      const rating = await storage.getBusinessRating(user.id, businessId);
+      res.json(rating || null);
+    } catch (error) {
+      console.error('Error fetching user business rating:', error);
+      res.status(500).json({ message: 'Failed to fetch user business rating' });
+    }
+  });
+
+  app.post('/api/businesses/:businessId/rate', authenticateToken, async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const { rating } = req.body;
+      const user = req.user as any;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      }
+
+      // Check if user already has a rating for this business
+      const existingRating = await storage.getBusinessRating(user.id, businessId);
+      
+      if (existingRating) {
+        // Update existing rating
+        const updatedRating = await storage.updateBusinessRating(existingRating.id, { rating });
+        res.json(updatedRating);
+      } else {
+        // Create new rating
+        const newRating = await storage.createBusinessRating({
+          user_id: user.id,
+          business_id: businessId,
+          rating
+        });
+        res.json(newRating);
+      }
+    } catch (error) {
+      console.error('Error rating business:', error);
+      res.status(500).json({ message: 'Failed to rate business' });
+    }
+  });
+
+  app.delete('/api/businesses/:businessId/rating', authenticateToken, async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const user = req.user as any;
+
+      const existingRating = await storage.getBusinessRating(user.id, businessId);
+      
+      if (!existingRating) {
+        return res.status(404).json({ message: 'Rating not found' });
+      }
+
+      await storage.deleteBusinessRating(existingRating.id);
+      res.json({ message: 'Rating deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting business rating:', error);
+      res.status(500).json({ message: 'Failed to delete business rating' });
+    }
+  });
+
   return httpServer;
 }
