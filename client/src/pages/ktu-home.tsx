@@ -25,7 +25,7 @@ const BusinessCard = ({ business }: { business: any }) => {
   const averageRating = ratingStats?.averageRating || 0;
 
   return (
-    <Link href={`/vendor/${business.id}`} className="block h-full">
+    <Link href={`/business/${business.id}`} className="block h-full">
       <div className="ktu-card animate-card-lift h-full group">
         <div className="relative overflow-hidden">
           <div 
