@@ -57,6 +57,10 @@ export interface IStorage {
     maxPrice?: number;
     searchTerm?: string;
   }): Promise<Product[]>;
+
+  // Search methods
+  searchProducts(query: string): Promise<Product[]>;
+  searchVendors(query: string): Promise<User[]>;
   
   // Orders
   getOrders(): Promise<Order[]>;
@@ -1073,6 +1077,48 @@ export class PostgresStorage implements IStorage {
       averageRating: Number(result[0]?.averageRating || 0),
       totalRatings: Number(result[0]?.totalRatings || 0)
     };
+  }
+
+  // Search methods
+  async searchProducts(query: string): Promise<Product[]> {
+    if (!db) throw new Error('Database not available');
+    const searchTerm = `%${query.toLowerCase()}%`;
+    
+    const result = await db.select()
+      .from(products)
+      .where(
+        or(
+          like(sql`LOWER(${products.title})`, searchTerm),
+          like(sql`LOWER(${products.description})`, searchTerm),
+          like(sql`LOWER(${products.category})`, searchTerm)
+        )
+      )
+      .orderBy(desc(products.created_at))
+      .limit(10);
+    
+    return result;
+  }
+
+  async searchVendors(query: string): Promise<User[]> {
+    if (!db) throw new Error('Database not available');
+    const searchTerm = `%${query.toLowerCase()}%`;
+    
+    const result = await db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'vendor'),
+          or(
+            like(sql`LOWER(${users.business_name})`, searchTerm),
+            like(sql`LOWER(${users.full_name})`, searchTerm),
+            like(sql`LOWER(${users.business_description})`, searchTerm)
+          )
+        )
+      )
+      .orderBy(desc(users.created_at))
+      .limit(8);
+    
+    return result;
   }
 }
 

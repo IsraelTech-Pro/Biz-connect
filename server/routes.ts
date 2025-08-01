@@ -811,6 +811,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search endpoint for real-time search
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query || query.length < 3) {
+        return res.json({ products: [], vendors: [] });
+      }
+
+      // Search products and vendors
+      const [products, vendors] = await Promise.all([
+        storage.searchProducts(query),
+        storage.searchVendors(query)
+      ]);
+
+      res.json({
+        products: products || [],
+        vendors: vendors?.map(v => ({ ...v, password: undefined })) || []
+      });
+    } catch (error) {
+      console.error('Search error:', error);
+      res.status(500).json({ message: 'Search failed' });
+    }
+  });
+
   // User routes
   app.get('/api/users/:id', async (req, res) => {
     try {
