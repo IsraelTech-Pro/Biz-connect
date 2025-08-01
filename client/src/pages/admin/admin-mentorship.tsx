@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { 
   Users, 
   Plus, 
@@ -14,7 +15,8 @@ import {
   Phone,
   Building,
   Briefcase,
-  Star
+  Star,
+  ArrowLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -758,6 +760,19 @@ export default function AdminMentorship() {
     <div className="min-h-screen bg-ktu-grey p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <Link href="/admin">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-2 text-ktu-deep-blue hover:text-ktu-orange hover:border-ktu-orange"
+                data-testid="button-back-admin"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Admin</span>
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-3xl font-bold text-ktu-deep-blue mb-2">Mentorship Management</h1>
           <p className="text-ktu-dark-grey">Manage mentors and programs for KTU BizConnect</p>
         </div>
