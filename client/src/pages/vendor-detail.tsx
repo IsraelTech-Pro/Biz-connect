@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Store, MapPin, Star, Package, Users, ShoppingBag, ArrowLeft, Grid3X3, List, Share2, Copy, Download, QrCode, Heart } from "lucide-react";
-import { User, Product } from "@/shared/schema";
+import { User, Product } from "@shared/schema";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
@@ -31,22 +31,22 @@ export default function VendorDetail() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: vendor, isLoading: vendorLoading } = useQuery({
+  const { data: vendor, isLoading: vendorLoading } = useQuery<User>({
     queryKey: [`/api/users/${id}`],
     enabled: !!id,
   });
 
-  const { data: products, isLoading: productsLoading } = useQuery({
+  const { data: products, isLoading: productsLoading } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
 
   // Rating-related queries
-  const { data: ratingStats } = useQuery({
+  const { data: ratingStats } = useQuery<{ averageRating: number; totalRatings: number }>({
     queryKey: [`/api/businesses/${id}/rating-stats`],
     enabled: !!id,
   });
 
-  const { data: userRating } = useQuery({
+  const { data: userRating } = useQuery<{ rating: number; id: string } | null>({
     queryKey: [`/api/businesses/${id}/user-rating`],
     enabled: !!id && !!user,
   });
@@ -500,8 +500,13 @@ export default function VendorDetail() {
                         ) : (
                           <Button 
                             onClick={handleRateClick}
-                            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                             size="sm"
+                            style={{ 
+                              backgroundColor: '#ea580c', 
+                              color: 'white',
+                              width: '100%'
+                            }}
+                            className="hover:bg-orange-700 transition-colors"
                           >
                             Rate This Business
                           </Button>
@@ -756,8 +761,12 @@ export default function VendorDetail() {
                 <Button 
                   onClick={handleRatingSubmit}
                   disabled={selectedRating === 0 || rateMutation.isPending}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
                   data-testid="submit-rating"
+                  style={{ 
+                    backgroundColor: '#ea580c', 
+                    color: 'white'
+                  }}
+                  className="flex-1 hover:bg-orange-700 transition-colors"
                 >
                   {rateMutation.isPending ? "Submitting..." : "Submit Rating"}
                 </Button>
