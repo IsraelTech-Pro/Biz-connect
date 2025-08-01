@@ -69,8 +69,15 @@ export default function AdminLogin() {
       >
         <Card className="shadow-2xl border-0">
           <CardHeader className="text-center pb-6">
-            <div className="mx-auto mb-4 w-16 h-16 bg-ktu-orange rounded-full flex items-center justify-center">
-              <Shield className="w-8 h-8 text-white" />
+            <div className="flex justify-center mb-4">
+              <img 
+                src="@assets/BizConnects Logo_1754063081249.png" 
+                alt="BizConnect Logo" 
+                className="w-16 h-16"
+              />
+            </div>
+            <div className="mx-auto mb-4 w-12 h-12 bg-ktu-orange rounded-full flex items-center justify-center">
+              <Shield className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-ktu-deep-blue">
               KTU BizConnect Admin

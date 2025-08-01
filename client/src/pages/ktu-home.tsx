@@ -241,6 +241,58 @@ export default function KTUHome() {
 
   return (
     <div className="min-h-screen bg-ktu-grey">
+      {/* Hero Section */}
+      <section className="relative h-96 bg-gradient-to-r from-ktu-deep-blue to-ktu-orange overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative container mx-auto px-4 h-full flex items-center justify-center text-center">
+          <div className="text-white max-w-4xl mx-auto">
+            <div className="flex justify-center mb-6">
+              <img 
+                src="@assets/BizConnects Logo_1754063081249.png" 
+                alt="BizConnect Logo" 
+                className="w-20 h-20 md:w-24 md:h-24"
+              />
+            </div>
+            <motion.h1 
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-3xl md:text-5xl font-bold mb-4"
+            >
+              {heroSlides[currentSlide].title}
+            </motion.h1>
+            <motion.p 
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-lg md:text-xl mb-6 opacity-90"
+            >
+              {heroSlides[currentSlide].description}
+            </motion.p>
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button className="bg-white text-ktu-deep-blue hover:bg-gray-100 px-8 py-3 text-lg font-semibold">
+                {heroSlides[currentSlide].ctaText}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+        {/* Slide indicators */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-colors ${
+                index === currentSlide ? 'bg-white' : 'bg-white/50'
+              }`}
+            />
+          ))}
+        </div>
+      </section>
 
       {/* Quick Actions Grid */}
       <section className="container mx-auto px-4 py-8">

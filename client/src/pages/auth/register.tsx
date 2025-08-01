@@ -101,6 +101,13 @@ export default function Register() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="@assets/BizConnects Logo_1754063081249.png" 
+              alt="BizConnect Logo" 
+              className="w-16 h-16"
+            />
+          </div>
           <CardTitle className="text-2xl font-bold text-ktu-deep-blue">Join KTU BizConnect</CardTitle>
           <p className="text-gray-600">For KTU students only - Create your account with your official KTU email</p>
         </CardHeader>

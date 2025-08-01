@@ -119,9 +119,14 @@ export const Header = () => {
             <div className="flex items-center space-x-6">
               <Link
                 to="/"
-                className="font-bold hover:text-ktu-orange transition-colors"
+                className="flex items-center space-x-2 font-bold hover:text-ktu-orange transition-colors"
               >
-                KTU BIZCONNECT
+                <img 
+                  src="@assets/BizConnects Logo_1754063081249.png" 
+                  alt="BizConnect Logo" 
+                  className="w-6 h-6"
+                />
+                <span>KTU BIZCONNECT</span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
