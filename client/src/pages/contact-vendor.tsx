@@ -50,16 +50,16 @@ export default function ContactVendorPage() {
   };
 
   const handleWhatsAppContact = () => {
-    if (!vendor || !(vendor as any).whatsapp_number || !product) return;
+    if (!vendor || !vendor.whatsapp || !product) return;
     
     const message = `Hi! I'm interested in your product "${product.title}" (GH₵${parseFloat(product.price).toFixed(2)}) from KTU BizConnect. Can you provide more details?`;
-    const whatsappUrl = `https://wa.me/${(vendor as any).whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${vendor.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handlePhoneCall = () => {
-    if (!vendor || !(vendor as any).phone_number) return;
-    window.location.href = `tel:${(vendor as any).phone_number}`;
+    if (!vendor || !vendor.phone) return;
+    window.location.href = `tel:${vendor.phone}`;
   };
 
   const handleEmailContact = () => {
@@ -133,7 +133,7 @@ export default function ContactVendorPage() {
             <CardContent>
               <div className="space-y-6">
                 {/* Product Image */}
-                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden max-w-sm mx-auto">
                   <img
                     src={product.image_url || '/placeholder-product.jpg'}
                     alt={product.title}
@@ -245,13 +245,13 @@ export default function ContactVendorPage() {
               <CardContent>
                 <div className="space-y-4">
                   {/* Phone Number */}
-                  {(vendor as any).phone_number && (
+                  {vendor.phone && (
                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                       <Phone className="h-5 w-5 text-gray-600" />
                       <div>
                         <p className="text-sm font-medium text-gray-800">Phone</p>
                         <p className="text-lg font-semibold text-gray-900">
-                          {(vendor as any).phone_number}
+                          {vendor.phone}
                         </p>
                       </div>
                       <Button
@@ -265,13 +265,13 @@ export default function ContactVendorPage() {
                   )}
 
                   {/* WhatsApp Number */}
-                  {(vendor as any).whatsapp_number && (
+                  {vendor.whatsapp && (
                     <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
                       <MessageCircle className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="text-sm font-medium text-gray-800">WhatsApp</p>
                         <p className="text-lg font-semibold text-gray-900">
-                          {(vendor as any).whatsapp_number}
+                          {vendor.whatsapp}
                         </p>
                       </div>
                       <Button
