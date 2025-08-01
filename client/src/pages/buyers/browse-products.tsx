@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'wouter';
 import type { Product } from '@shared/schema';
+import { ProductRating } from '@/components/product-rating';
 
 // Category icons mapping
 const categoryIcons: { [key: string]: string } = {
@@ -184,11 +185,6 @@ export default function BrowseProducts() {
   };
 
   const VendorHubProductCard = ({ product }: { product: Product }) => {
-    const discountPercent = Math.floor(Math.random() * 40) + 10;
-    const originalPrice = parseFloat(product.price) * (1 + discountPercent / 100);
-    const itemsLeft = Math.floor(Math.random() * 50) + 1;
-    const rating = (Math.random() * 2 + 3).toFixed(1);
-    const ratingCount = Math.floor(Math.random() * 500) + 50;
     
     return (
       <Link to={`/products/${product.id}`} className="block h-full">
@@ -213,26 +209,17 @@ export default function BrowseProducts() {
                 {product.title.length > 25 ? product.title.substring(0, 25) + '...' : product.title}
               </h3>
               
-              <div className="flex items-center space-x-1 mb-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-2.5 h-2.5 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-                  ))}
-                </div>
-                <span className="text-xs text-gray-500 font-medium">({ratingCount})</span>
-              </div>
+              <ProductRating 
+                productId={product.id} 
+                size="sm" 
+                showCount={true} 
+                interactive={false}
+              />
             </div>
             
             <div className="space-y-1">
               <div className="flex items-center space-x-1">
                 <span className="text-orange-600 font-bold text-sm">GH₵ {product.price}</span>
-                {discountPercent > 0 && (
-                  <span className="text-gray-400 line-through text-xs">GH₵ {originalPrice.toFixed(2)}</span>
-                )}
-              </div>
-              
-              <div className="text-xs text-gray-500 font-medium">
-                {itemsLeft} items left
               </div>
             </div>
           </div>

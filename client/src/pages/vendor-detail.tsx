@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/contexts/auth-context";
+import { ProductRating } from "@/components/product-rating";
 import QRCode from 'qrcode';
 
 export default function VendorDetail() {
@@ -285,7 +286,7 @@ export default function VendorDetail() {
         case 'rating':
           return Math.random() - 0.5;
         case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
         case 'popular':
         default:
           return Math.random() - 0.5;
@@ -296,10 +297,6 @@ export default function VendorDetail() {
   const sortedProducts = sortProducts(vendorProducts);
 
   const VendorHubProductCard = ({ product }: { product: Product }) => {
-    const discountPercent = Math.floor(Math.random() * 40) + 10;
-    const originalPrice = parseFloat(product.price) * (1 + discountPercent / 100);
-    const productRating = (Math.random() * 2 + 3).toFixed(1);
-    const ratingCount = Math.floor(Math.random() * 500) + 50;
     
     return (
       <Link to={`/products/${product.id}`} className="block">
@@ -319,9 +316,6 @@ export default function VendorDetail() {
               <button className="p-1 rounded-full bg-white/90 hover:bg-white transition-colors text-gray-600">
                 <Heart className="h-2.5 w-2.5" />
               </button>
-              <button className="p-1 rounded-full bg-white/90 hover:bg-white transition-colors text-gray-600">
-                <ShoppingBag className="h-2.5 w-2.5" />
-              </button>
             </div>
           </div>
           <div className="p-2">
@@ -333,15 +327,12 @@ export default function VendorDetail() {
             </h4>
             
             <div className="flex items-center text-xs">
-              <div className="flex items-center space-x-1">
-                <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
-                <span className="text-gray-600">
-                  {productRating}
-                </span>
-                <span className="text-gray-500">
-                  ({ratingCount})
-                </span>
-              </div>
+              <ProductRating 
+                productId={product.id} 
+                size="sm" 
+                showCount={true} 
+                interactive={false}
+              />
             </div>
           </div>
         </div>
@@ -368,8 +359,8 @@ export default function VendorDetail() {
           <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-8">
             {/* Store Banner */}
             <div className="h-48 relative" style={{
-              backgroundImage: vendor.banner_url && typeof vendor.banner_url === 'object' && vendor.banner_url.url 
-                ? `url(${vendor.banner_url.url})` 
+              backgroundImage: vendor?.banner_url && typeof vendor.banner_url === 'object' && 'url' in vendor.banner_url
+                ? `url(${(vendor.banner_url as any).url})` 
                 : 'linear-gradient(to right, #fb923c, #ea580c)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
@@ -379,10 +370,10 @@ export default function VendorDetail() {
                 <div className="flex items-end justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="bg-white p-3 rounded-full overflow-hidden">
-                      {vendor.profile_picture && typeof vendor.profile_picture === 'object' && vendor.profile_picture.url ? (
+                      {vendor?.profile_picture && typeof vendor.profile_picture === 'object' && 'url' in vendor.profile_picture ? (
                         <img 
-                          src={vendor.profile_picture.url} 
-                          alt={vendor.profile_picture.alt || "Store logo"}
+                          src={(vendor.profile_picture as any).url} 
+                          alt={(vendor.profile_picture as any).alt || "Store logo"}
                           className="w-8 h-8 object-cover"
                         />
                       ) : (
@@ -399,7 +390,7 @@ export default function VendorDetail() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    {vendor.status === 'approved' && (
+                    {vendor?.is_approved && (
                       <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                         Verified
                       </div>
