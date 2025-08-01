@@ -66,7 +66,9 @@ export default function VendorSettings() {
     momo_number: displayPhoneNumber(currentUser?.momo_number || ''),
     email: currentUser?.email || '',
     phone: displayPhoneNumber(currentUser?.phone || ''),
-    whatsapp: displayPhoneNumber(currentUser?.whatsapp || '')
+    whatsapp: displayPhoneNumber(currentUser?.whatsapp || ''),
+    profile_picture: currentUser?.profile_picture || null,
+    banner_url: currentUser?.banner_url || null
   });
 
   // Update form data when user data changes
@@ -78,7 +80,9 @@ export default function VendorSettings() {
         momo_number: displayPhoneNumber(currentUser.momo_number || ''),
         email: currentUser.email || '',
         phone: displayPhoneNumber(currentUser.phone || ''),
-        whatsapp: displayPhoneNumber(currentUser.whatsapp || '')
+        whatsapp: displayPhoneNumber(currentUser.whatsapp || ''),
+        profile_picture: currentUser.profile_picture || null,
+        banner_url: currentUser.banner_url || null
       });
     }
   }, [currentUser]);
@@ -315,8 +319,8 @@ export default function VendorSettings() {
               </Button>
             </Link>
           </div>
-          <h1 className="text-3xl font-bold text-black">Store Settings</h1>
-          <p className="text-gray-600 mt-2">Manage your store information and preferences</p>
+          <h1 className="text-3xl font-bold text-black">Student Business Settings</h1>
+          <p className="text-gray-600 mt-2">Manage your student business information and preferences</p>
         </div>
 
         <div className="space-y-6">
@@ -325,19 +329,19 @@ export default function VendorSettings() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Store className="h-5 w-5" />
-                <span>Store Information</span>
+                <span>Student Business Information</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="business_name">Store Name</Label>
+                    <Label htmlFor="business_name">Business Name</Label>
                     <Input
                       id="business_name"
                       value={formData.business_name}
                       onChange={(e) => handleInputChange('business_name', e.target.value)}
-                      placeholder="Enter your store name"
+                      placeholder="Enter your student business name"
                     />
                   </div>
                   <div>
@@ -353,12 +357,12 @@ export default function VendorSettings() {
                 </div>
 
                 <div>
-                  <Label htmlFor="business_description">Store Description</Label>
+                  <Label htmlFor="business_description">Business Description</Label>
                   <Textarea
                     id="business_description"
                     value={formData.business_description}
                     onChange={(e) => handleInputChange('business_description', e.target.value)}
-                    placeholder="Describe your store and what you sell"
+                    placeholder="Describe your student business and what you offer to fellow students"
                     rows={4}
                   />
                 </div>
@@ -366,14 +370,14 @@ export default function VendorSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Store Logo Upload */}
                   <div>
-                    <Label htmlFor="store_logo">Store Logo</Label>
+                    <Label htmlFor="store_logo">Business Logo</Label>
                     <div className="mt-2">
                       {logoPreview ? (
                         <div className="relative">
                           <div className="w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                             <img 
                               src={logoPreview} 
-                              alt="Store logo preview" 
+                              alt="Business logo preview" 
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -428,14 +432,14 @@ export default function VendorSettings() {
 
                   {/* Store Banner Upload */}
                   <div>
-                    <Label htmlFor="store_banner">Store Banner</Label>
+                    <Label htmlFor="store_banner">Business Banner</Label>
                     <div className="mt-2">
                       {bannerPreview ? (
                         <div className="relative">
                           <div className="w-full h-32 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                             <img 
                               src={bannerPreview} 
-                              alt="Store banner preview" 
+                              alt="Business banner preview" 
                               className="w-full h-full object-cover"
                             />
                           </div>
@@ -552,7 +556,7 @@ export default function VendorSettings() {
                     placeholder="024XXXXXXX"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    Your primary contact number for business communication (will be saved as +233XXXXXXX)
+                    Your primary contact number for student business communication (will be saved as +233XXXXXXX)
                   </p>
                 </div>
 
@@ -568,11 +572,11 @@ export default function VendorSettings() {
                     placeholder="024XXXXXXX"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    WhatsApp number for customer support and inquiries (will be saved as +233XXXXXXX)
+                    WhatsApp number for student customer support and inquiries (will be saved as +233XXXXXXX)
                   </p>
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
                     <p className="text-sm text-blue-800">
-                      <strong>Important:</strong> Make sure this number is registered with WhatsApp. Customers will use this number to contact you directly through WhatsApp for support and inquiries.
+                      <strong>Important:</strong> Make sure this number is registered with WhatsApp. Fellow students will use this number to contact you directly through WhatsApp for support and inquiries about your business.
                     </p>
                   </div>
                 </div>
@@ -583,7 +587,7 @@ export default function VendorSettings() {
                     <div>
                       <p className="font-medium text-green-900">Contact Information</p>
                       <p className="text-sm text-green-800 mt-1">
-                        Keep your contact information up to date so customers can reach you easily. Email is required for account notifications, while phone and WhatsApp numbers are optional but recommended.
+                        Keep your contact information up to date so fellow students can reach you easily. Email is required for account notifications, while phone and WhatsApp numbers are optional but recommended for your student business.
                       </p>
                     </div>
                   </div>
@@ -635,7 +639,7 @@ export default function VendorSettings() {
                     placeholder="024XXXXXXX"
                   />
                   <p className="text-sm text-gray-600 mt-1">
-                    This number will be used for receiving payouts (will be saved as +233XXXXXXX)
+                    This number will be used for receiving payouts from your student business sales (will be saved as +233XXXXXXX)
                   </p>
                 </div>
 
@@ -649,7 +653,7 @@ export default function VendorSettings() {
                 {!currentUser?.momo_number && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                     <p className="text-sm text-yellow-800">
-                      Please set your mobile money number to receive payouts. 
+                      Please set your mobile money number to receive payouts from your student business sales.
                     </p>
                   </div>
                 )}
@@ -684,9 +688,9 @@ export default function VendorSettings() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-black">Vendor Status</p>
+                    <p className="font-medium text-black">Student Business Status</p>
                     <p className="text-sm text-gray-600">
-                      Your vendor account approval status
+                      Your student business account approval status
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -700,7 +704,7 @@ export default function VendorSettings() {
                 {!currentUser?.is_approved && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800">
-                      Your vendor account is pending approval. You'll be able to start selling once an admin approves your account.
+                      Your student business account is pending approval. You'll be able to start selling to fellow students once an admin approves your account.
                     </p>
                   </div>
                 )}
@@ -708,12 +712,12 @@ export default function VendorSettings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-black">Account Type</p>
-                    <p className="text-sm text-gray-600">Vendor Account</p>
+                    <p className="text-sm text-gray-600">Student Business Account</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                     <span className="text-sm font-medium text-blue-600">
-                      {currentUser?.role?.charAt(0).toUpperCase() + currentUser?.role?.slice(1) || 'Vendor'}
+                      {currentUser?.role?.charAt(0).toUpperCase() + currentUser?.role?.slice(1) || 'Student Business Owner'}
                     </span>
                   </div>
                 </div>
