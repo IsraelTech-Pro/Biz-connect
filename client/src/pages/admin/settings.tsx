@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, Settings, DollarSign, Calendar, Percent } from 'lucide-react';
+import { Save, Settings, DollarSign, Calendar, Percent, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { Link } from 'wouter';
 import type { PlatformSettings } from '@shared/schema';
 
 export default function AdminSettings() {
@@ -105,6 +106,19 @@ export default function AdminSettings() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <Link href="/admin/dashboard">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-2 text-ktu-deep-blue hover:text-ktu-orange hover:border-ktu-orange"
+                data-testid="button-back-admin"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-3xl font-bold text-black">Platform Settings</h1>
           <p className="text-gray-600 mt-2">Configure platform-wide settings and policies</p>
         </div>

@@ -1,56 +1,67 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Search, CheckCircle, X, Store, Eye } from 'lucide-react';
+import { Users, Search, CheckCircle, X, Store, Eye, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { Link } from 'wouter';
 import type { User } from '@shared/schema';
 
 export default function AdminVendors() {
-  const { token } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<User | null>(null);
+  
+  // Get admin token from localStorage
+  const adminToken = localStorage.getItem('admin_token');
 
   const { data: vendors = [], isLoading } = useQuery<User[]>({
-    queryKey: ['/api/vendors'],
+    queryKey: ['/api/admin/businesses'],
     queryFn: async () => {
-      const response = await fetch('/api/vendors', {
+      const response = await fetch('/api/admin/businesses', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${adminToken}`
         }
       });
+      if (!response.ok) throw new Error('Failed to fetch vendors');
       return response.json();
     },
-    enabled: !!token
+    enabled: !!adminToken
   });
 
   const { data: pendingVendors = [] } = useQuery<User[]>({
-    queryKey: ['/api/vendors/pending'],
+    queryKey: ['/api/admin/vendors/pending'],
     queryFn: async () => {
-      const response = await fetch('/api/vendors/pending', {
+      const response = await fetch('/api/admin/vendors/pending', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${adminToken}`
         }
       });
+      if (!response.ok) throw new Error('Failed to fetch pending vendors');
       return response.json();
     },
-    enabled: !!token
+    enabled: !!adminToken
   });
 
   const approveVendorMutation = useMutation({
     mutationFn: async (vendorId: string) => {
-      return apiRequest('POST', `/api/vendors/${vendorId}/approve`, {});
+      const response = await fetch(`/api/admin/businesses/${vendorId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to approve vendor');
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/vendors'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/vendors/pending'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/businesses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/vendors/pending'] });
       toast({
         title: "Vendor Approved",
         description: "The vendor has been approved successfully.",
@@ -90,19 +101,34 @@ export default function AdminVendors() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-black">Vendor Management</h1>
-            <p className="text-gray-600 mt-2">Manage vendor applications and accounts</p>
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <Link href="/admin/dashboard">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-2 text-ktu-deep-blue hover:text-ktu-orange hover:border-ktu-orange"
+                data-testid="button-back-admin"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+            </Link>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search vendors..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-80"
-            />
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-black">Vendor Management</h1>
+              <p className="text-gray-600 mt-2">Manage vendor applications and accounts</p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search vendors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
           </div>
         </div>
 

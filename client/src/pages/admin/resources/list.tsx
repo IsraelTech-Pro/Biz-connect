@@ -10,7 +10,8 @@ import {
   Download,
   ExternalLink,
   MoreHorizontal,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -142,6 +143,19 @@ export default function ResourcesList() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
+          <div className="flex items-center space-x-4 mb-4">
+            <Link href="/admin/dashboard">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center space-x-2 text-ktu-deep-blue hover:text-ktu-orange hover:border-ktu-orange"
+                data-testid="button-back-admin"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+            </Link>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-ktu-deep-blue">Resources Management</h1>

@@ -761,7 +761,7 @@ export default function AdminMentorship() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <div className="flex items-center space-x-4 mb-4">
-            <Link href="/admin">
+            <Link href="/admin/dashboard">
               <Button 
                 variant="outline" 
                 size="sm"
