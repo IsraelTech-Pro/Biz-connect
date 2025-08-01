@@ -65,24 +65,6 @@ export const Header = () => {
               >
                 KTU BIZCONNECT
               </Link>
-              <Link
-                to="/student-businesses"
-                className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer"
-              >
-                Student Entrepreneurs
-              </Link>
-              <Link
-                to="/"
-                className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer"
-              >
-                🏫 Campus Hub
-              </Link>
-              <Link
-                to="/resources"
-                className="hidden md:inline hover:text-ktu-orange transition-colors cursor-pointer"
-              >
-                📚 Resources
-              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <span className="font-bold">Need Help?</span>
