@@ -20,6 +20,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: string): Promise<void>;
   getVendors(): Promise<User[]>;
   getPendingVendors(): Promise<User[]>;
   approveVendor(id: string): Promise<User>;
@@ -189,6 +190,11 @@ export class PostgresStorage implements IStorage {
     if (!db) throw new Error('Database not available');
     const result = await db.update(users).set(user).where(eq(users.id, id)).returning();
     return result[0];
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    if (!db) throw new Error('Database not available');
+    await db.delete(users).where(eq(users.id, id));
   }
 
   async getVendors(): Promise<User[]> {

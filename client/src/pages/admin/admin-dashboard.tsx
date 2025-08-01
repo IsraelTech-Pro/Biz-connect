@@ -125,6 +125,113 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUserEdit = async (userId: string, updates: Partial<User>) => {
+    const adminToken = localStorage.getItem('admin_token');
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${adminToken}`
+        },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) throw new Error('Failed to update user');
+
+      toast({
+        title: "User Updated",
+        description: "User information updated successfully.",
+      });
+      
+      refetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUserStatusToggle = async (userId: string, isApproved: boolean) => {
+    await handleUserEdit(userId, { is_approved: !isApproved });
+  };
+
+  const handleUserRoleChange = async (userId: string, newRole: string) => {
+    await handleUserEdit(userId, { role: newRole });
+  };
+
+  const handleBusinessView = (businessId: string) => {
+    setLocation(`/admin/businesses/${businessId}`);
+  };
+
+  const handleUserView = (userId: string) => {
+    setLocation(`/admin/users/${userId}`);
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      return;
+    }
+
+    const adminToken = localStorage.getItem('admin_token');
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user');
+
+      toast({
+        title: "User Deleted",
+        description: "User has been deleted successfully.",
+      });
+      
+      refetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteBusiness = async (businessId: string) => {
+    if (!confirm('Are you sure you want to delete this business? This action cannot be undone.')) {
+      return;
+    }
+
+    const adminToken = localStorage.getItem('admin_token');
+    try {
+      const response = await fetch(`/api/admin/businesses/${businessId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to delete business');
+
+      toast({
+        title: "Business Deleted",
+        description: "Business has been deleted successfully.",
+      });
+      
+      refetchBusinesses();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete business. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     queryFn: async () => {
@@ -149,7 +256,7 @@ export default function AdminDashboard() {
     enabled: !!adminToken
   });
 
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+  const { data: users = [], isLoading: usersLoading, refetch: refetchUsers } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
     queryFn: async () => {
       const response = await fetch('/api/admin/users', {
@@ -538,9 +645,20 @@ export default function AdminDashboard() {
                               </Button>
                             </>
                           )}
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleBusinessView(business.id)}
+                          >
                             <Eye className="w-4 h-4 mr-1" />
                             View
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteBusiness(business.id)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </div>
@@ -580,12 +698,27 @@ export default function AdminDashboard() {
                           }>
                             {user.role}
                           </Badge>
-                          <Badge className={user.is_approved ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                            {user.is_approved ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <Button variant="outline" size="sm">
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
+                          <Button 
+                            size="sm" 
+                            variant={user.is_approved ? "destructive" : "default"}
+                            onClick={() => handleUserStatusToggle(user.id, user.is_approved)}
+                          >
+                            {user.is_approved ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleUserView(user.id)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteUser(user.id)}
+                          >
+                            Delete
                           </Button>
                         </div>
                       </div>

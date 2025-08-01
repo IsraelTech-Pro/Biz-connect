@@ -2233,6 +2233,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin CRUD endpoints for user management
+  app.patch('/api/admin/users/:userId', authenticateAdminToken, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const updates = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, updates);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ message: 'Failed to update user' });
+    }
+  });
+
+  app.delete('/api/admin/users/:userId', authenticateAdminToken, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      await storage.deleteUser(userId);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      res.status(500).json({ message: 'Failed to delete user' });
+    }
+  });
+
+  // Admin CRUD endpoints for business management
+  app.delete('/api/admin/businesses/:businessId', authenticateAdminToken, async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      
+      // Delete business (which is a vendor user)
+      await storage.deleteUser(businessId);
+      res.json({ message: 'Business deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting business:', error);
+      res.status(500).json({ message: 'Failed to delete business' });
+    }
+  });
+
   // Admin endpoint to get all products
   app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
     try {
