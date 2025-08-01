@@ -14,10 +14,18 @@ import { Link } from 'wouter';
 import type { Product, User } from '@shared/schema';
 import { getCategoryLabel } from '@shared/categories';
 
-// KTU BizConnect Business Card Component
+// KTU BizConnect Business Card Component with Real Rating
 const BusinessCard = ({ business }: { business: any }) => {
+  // Fetch real rating for this business
+  const { data: ratingStats } = useQuery<{ averageRating: number; totalRatings: number }>({
+    queryKey: [`/api/businesses/${business.id}/rating-stats`],
+    enabled: !!business.id,
+  });
+
+  const averageRating = ratingStats?.averageRating || 0;
+
   return (
-    <Link href={`/business/${business.id}`} className="block h-full">
+    <Link href={`/vendor/${business.id}`} className="block h-full">
       <div className="ktu-card animate-card-lift h-full group">
         <div className="relative overflow-hidden">
           <div 
@@ -44,7 +52,7 @@ const BusinessCard = ({ business }: { business: any }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1 text-xs text-ktu-dark-grey">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span>4.{Math.floor(Math.random() * 9)}</span>
+              <span>{averageRating > 0 ? averageRating.toFixed(1) : 'No ratings'}</span>
             </div>
             <Button size="sm" variant="ghost" className="text-ktu-orange hover:text-ktu-orange hover:bg-ktu-light-blue">
               View <ArrowRight className="h-3 w-3 ml-1" />
@@ -79,7 +87,7 @@ const ProductCard = ({ product }: { product: any }) => {
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center space-x-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-xs text-ktu-dark-grey">4.{Math.floor(Math.random() * 9)}</span>
+              <span className="text-xs text-ktu-dark-grey">No ratings</span>
             </div>
             <Heart className="h-4 w-4 text-ktu-dark-grey hover:text-ktu-orange cursor-pointer transition-colors" />
           </div>

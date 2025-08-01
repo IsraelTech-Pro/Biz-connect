@@ -37,6 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUser = async (authToken: string) => {
     try {
+      console.log('Fetching user with token...');
       const response = await fetch('/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -45,8 +46,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (response.ok) {
         const userData = await response.json();
+        console.log('User data fetched successfully:', userData.email);
         setUser(userData);
       } else {
+        console.log('Token validation failed, removing stored token');
         localStorage.removeItem('authToken');
         setToken(null);
       }
@@ -60,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
+    console.log('Login attempt for:', email);
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
@@ -70,10 +74,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!response.ok) {
       const error = await response.json();
+      console.log('Login failed:', error.message);
       throw new Error(error.message);
     }
 
     const { user: userData, token: authToken } = await response.json();
+    console.log('Login successful for:', userData.email);
     setUser(userData);
     setToken(authToken);
     localStorage.setItem('authToken', authToken);
