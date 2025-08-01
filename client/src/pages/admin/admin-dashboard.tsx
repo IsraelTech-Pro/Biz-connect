@@ -363,13 +363,7 @@ export default function AdminDashboard() {
       color: "text-purple-600",
       bgColor: "bg-purple-50"
     },
-    {
-      title: "System Health",
-      value: "98.5%",
-      icon: Activity,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50"
-    }
+
   ];
 
   const quickActions = [
@@ -408,13 +402,7 @@ export default function AdminDashboard() {
       color: "bg-purple-600",
       action: "/admin/resources"
     },
-    {
-      title: "System Settings",
-      description: "Configure platform-wide settings",
-      icon: Settings,
-      color: "bg-gray-600",
-      action: "/admin/settings"
-    }
+
   ];
 
   if (statsLoading) {
