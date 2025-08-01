@@ -23,24 +23,24 @@ type SupportForm = z.infer<typeof supportSchema>;
 
 const faqData = [
   {
-    question: "How do I track my order?",
-    answer: "You can track your order using our order tracking page. Just enter your order ID or email address to get real-time updates on your order status."
+    question: "How do I start my business on KTU BizConnect?",
+    answer: "As a KTU student, you can register your business by creating an account and setting up your store profile. Upload your products and start selling to the KTU community."
   },
   {
-    question: "What payment methods do you accept?",
-    answer: "We accept MTN Mobile Money, Vodafone Cash, AirtelTigo Money, and all major credit/debit cards through our secure Paystack integration."
+    question: "What payment methods are available?",
+    answer: "We support Mobile Money (MTN, Vodafone, AirtelTigo) for convenient transactions within the university community."
   },
   {
-    question: "How long does delivery take?",
-    answer: "Delivery times vary by location and vendor. Most orders within Accra are delivered within 1-3 business days, while other regions may take 3-7 business days."
+    question: "How do I contact a student entrepreneur?",
+    answer: "You can reach out to student businesses through their store pages or contact them directly using the information provided on their business profiles."
   },
   {
-    question: "Can I return or exchange items?",
-    answer: "Yes, we have a 7-day return policy for most items. Items must be in original condition with all packaging and tags. See our return policy for full details."
+    question: "Is this platform only for KTU students?",
+    answer: "KTU BizConnect is primarily designed for KTU students and the university community, but we welcome all users who want to support student entrepreneurship."
   },
   {
-    question: "How do I contact a vendor directly?",
-    answer: "You can contact vendors through their store pages or through your order details. We also facilitate communication for any order-related queries."
+    question: "How can I get mentorship for my business?",
+    answer: "Visit our Mentorship Hub to connect with experienced mentors who can guide your entrepreneurial journey at KTU."
   }
 ];
 
@@ -86,10 +86,10 @@ export default function CustomerSupport() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center animate-fade-in">
             <h1 className="text-4xl font-bold text-black mb-4">
-              Customer <span className="text-gradient">Support</span>
+              KTU BizConnect <span className="text-gradient">Support</span>
             </h1>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Need help? We're here to assist you with any questions or concerns about your orders, returns, or our platform.
+              Need help with your student business or have questions about our platform? We're here to support the KTU entrepreneurial community.
             </p>
           </div>
         </div>
@@ -127,26 +127,14 @@ export default function CustomerSupport() {
                   </div>
                   <div>
                     <h4 className="font-semibold mb-1">Email Support</h4>
-                    <p className="text-sm text-gray-600 mb-1">support@vendorhub.com</p>
+                    <p className="text-sm text-gray-600 mb-1">support@ktubizconnect.com</p>
                     <Badge variant="secondary" className="text-xs">
-                      Response: 4-6 hours
+                      Response: 24-48 hours
                     </Badge>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <div className="bg-orange-100 p-2 rounded-full">
-                    <Clock className="w-5 h-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">Business Hours</h4>
-                    <p className="text-sm text-gray-600">
-                      Monday - Friday: 8:00 AM - 6:00 PM<br />
-                      Saturday: 9:00 AM - 4:00 PM<br />
-                      Sunday: Closed
-                    </p>
-                  </div>
-                </div>
+
               </CardContent>
             </Card>
 
@@ -158,15 +146,15 @@ export default function CustomerSupport() {
               <CardContent>
                 <div className="space-y-3">
                   <button
-                    onClick={() => setSelectedCategory('order')}
+                    onClick={() => setSelectedCategory('business')}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
-                      selectedCategory === 'order' 
+                      selectedCategory === 'business' 
                         ? 'bg-orange-50 border-l-4 border-orange-500' 
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
-                    <div className="font-medium">Order Issues</div>
-                    <div className="text-sm text-gray-600">Tracking, delays, cancellations</div>
+                    <div className="font-medium">Business Setup</div>
+                    <div className="text-sm text-gray-600">Store creation, product listings</div>
                   </button>
 
                   <button
@@ -177,20 +165,20 @@ export default function CustomerSupport() {
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
-                    <div className="font-medium">Payment Issues</div>
-                    <div className="text-sm text-gray-600">Refunds, payment failures</div>
+                    <div className="font-medium">Payment & Mobile Money</div>
+                    <div className="text-sm text-gray-600">Transaction issues, payouts</div>
                   </button>
 
                   <button
-                    onClick={() => setSelectedCategory('returns')}
+                    onClick={() => setSelectedCategory('mentorship')}
                     className={`w-full text-left p-3 rounded-lg transition-colors ${
-                      selectedCategory === 'returns' 
+                      selectedCategory === 'mentorship' 
                         ? 'bg-orange-50 border-l-4 border-orange-500' 
                         : 'bg-gray-50 hover:bg-gray-100'
                     }`}
                   >
-                    <div className="font-medium">Returns & Exchanges</div>
-                    <div className="text-sm text-gray-600">Return process, refund status</div>
+                    <div className="font-medium">Mentorship & Resources</div>
+                    <div className="text-sm text-gray-600">Business guidance, learning materials</div>
                   </button>
 
                   <button
@@ -262,9 +250,9 @@ export default function CustomerSupport() {
                       className="w-full p-2 border rounded-md bg-white"
                     >
                       <option value="general">General Questions</option>
-                      <option value="order">Order Issues</option>
-                      <option value="payment">Payment Issues</option>
-                      <option value="returns">Returns & Exchanges</option>
+                      <option value="business">Business Setup</option>
+                      <option value="payment">Payment & Mobile Money</option>
+                      <option value="mentorship">Mentorship & Resources</option>
                       <option value="technical">Technical Support</option>
                     </select>
                   </div>
@@ -312,26 +300,26 @@ export default function CustomerSupport() {
               </CardContent>
             </Card>
 
-            {/* Status Updates */}
+            {/* Platform Status */}
             <Card className="animate-fade-in">
               <CardHeader>
-                <CardTitle>System Status</CardTitle>
+                <CardTitle>Platform Status</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <div>
-                      <div className="font-medium">Payment System</div>
-                      <div className="text-sm text-gray-600">All systems operational</div>
+                      <div className="font-medium">Student Businesses</div>
+                      <div className="text-sm text-gray-600">All stores operational</div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <div>
-                      <div className="font-medium">Order Processing</div>
-                      <div className="text-sm text-gray-600">Normal processing times</div>
+                      <div className="font-medium">Mentorship Hub</div>
+                      <div className="text-sm text-gray-600">Mentors available</div>
                     </div>
                   </div>
 
