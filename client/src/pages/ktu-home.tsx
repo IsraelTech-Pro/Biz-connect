@@ -375,22 +375,12 @@ export default function KTUHome() {
       {/* Stats Section */}
       <section className="bg-white py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-md mx-auto">
             {[
-              { 
-                label: "Active Businesses", 
-                value: statsLoading ? "..." : (platformStats?.activeBusinesses || 0), 
-                icon: Store 
-              },
               { 
                 label: "Student Entrepreneurs", 
                 value: statsLoading ? "..." : (platformStats?.studentEntrepreneurs || 0), 
                 icon: Users 
-              },
-              { 
-                label: "Success Stories", 
-                value: statsLoading ? "..." : (platformStats?.successStories || 0), 
-                icon: Award 
               },
               { 
                 label: "Mentors Available", 
