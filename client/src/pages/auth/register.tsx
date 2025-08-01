@@ -29,12 +29,12 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    // KTU Student Email validation
+    const ktuEmailRegex = /^[^\s@]+@ktu\.edu\.gh$/;
+    if (!ktuEmailRegex.test(formData.email)) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address (e.g., user@example.com)",
+        title: "Invalid KTU Student Email",
+        description: "Only KTU students can register. Please use your official KTU email ending with @ktu.edu.gh",
         variant: "destructive"
       });
       return;
@@ -91,8 +91,8 @@ export default function Register() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-black">Join VendorHub</CardTitle>
-          <p className="text-gray-600">Create your account to get started</p>
+          <CardTitle className="text-2xl font-bold text-ktu-deep-blue">Join KTU BizConnect</CardTitle>
+          <p className="text-gray-600">For KTU students only - Create your account with your official KTU email</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -109,15 +109,16 @@ export default function Register() {
             </div>
             
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">KTU Student Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="yourname@ktu.edu.gh"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Must be your official KTU email ending with @ktu.edu.gh</p>
             </div>
 
             <div>

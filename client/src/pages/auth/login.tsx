@@ -60,8 +60,8 @@ export default function Login() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-black">Welcome Back</CardTitle>
-          <p className="text-gray-600">Sign in to your VendorHub account</p>
+          <CardTitle className="text-2xl font-bold text-ktu-deep-blue">Welcome Back</CardTitle>
+          <p className="text-gray-600">Sign in to your KTU BizConnect account</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

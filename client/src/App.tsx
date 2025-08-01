@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { CartProvider } from "@/contexts/cart-context";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { ProtectedRoute } from "@/components/protected-route";
 
 import { PaymentCallbackHandler } from "@/components/payment-callback-handler";
 import { PaymentSuccessNotice } from "@/components/payment-success-notice";
@@ -87,54 +88,225 @@ import ContactVendor from './pages/contact-vendor';
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={KTUHome} />
-      {/* Remove duplicate /businesses route - consolidating to /student-businesses */}
-      <Route path="/mentorship" component={MentorshipHub} />
-      <Route path="/resources" component={BusinessResources} />
-      <Route path="/resources/:id" component={ResourceDetail} />
-      <Route path="/community" component={CommunityForum} />
-      <Route path="/products" component={ProductsListing} />
-      <Route path="/products-listing" component={ProductsListing} />
-      <Route path="/products/:id" component={ProductDetail} />
-      <Route path="/vendors" component={Vendors} />
-      <Route path="/cart" component={Cart} />
-      <Route path="/cart-dashboard" component={CartDashboard} />
-      <Route path="/checkout" component={Checkout} />
-      <Route path="/payment-result" component={PaymentResult} />
-      <Route path="/orders" component={Orders} />
+      {/* Public authentication routes */}
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
-      <Route path="/vendor/register" component={VendorRegister} />
-      <Route path="/vendor/dashboard" component={VendorDashboard} />
-      <Route path="/dashboard/buyer" component={BuyerDashboard} />
-      <Route path="/vendor/products" component={VendorProducts} />
-      <Route path="/vendor/products/grid" component={VendorProductsGrid} />
-      <Route path="/vendor/orders" component={VendorOrders} />
-      <Route path="/vendor/analytics" component={VendorAnalytics} />
-      <Route path="/vendor/settings" component={VendorSettings} />
+      
+      {/* All other routes require authentication */}
+      <Route path="/">
+        <ProtectedRoute>
+          <KTUHome />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/mentorship">
+        <ProtectedRoute>
+          <MentorshipHub />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/resources">
+        <ProtectedRoute>
+          <BusinessResources />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/resources/:id">
+        <ProtectedRoute>
+          <ResourceDetail />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/community">
+        <ProtectedRoute>
+          <CommunityForum />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/products">
+        <ProtectedRoute>
+          <ProductsListing />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/products-listing">
+        <ProtectedRoute>
+          <ProductsListing />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/products/:id">
+        <ProtectedRoute>
+          <ProductDetail />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendors">
+        <ProtectedRoute>
+          <Vendors />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/cart">
+        <ProtectedRoute>
+          <Cart />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/cart-dashboard">
+        <ProtectedRoute>
+          <CartDashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/checkout">
+        <ProtectedRoute>
+          <Checkout />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/payment-result">
+        <ProtectedRoute>
+          <PaymentResult />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/orders">
+        <ProtectedRoute>
+          <Orders />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/register">
+        <ProtectedRoute>
+          <VendorRegister />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/dashboard">
+        <ProtectedRoute>
+          <VendorDashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/dashboard/buyer">
+        <ProtectedRoute>
+          <BuyerDashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/products">
+        <ProtectedRoute>
+          <VendorProducts />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/products/grid">
+        <ProtectedRoute>
+          <VendorProductsGrid />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/orders">
+        <ProtectedRoute>
+          <VendorOrders />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/analytics">
+        <ProtectedRoute>
+          <VendorAnalytics />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor/settings">
+        <ProtectedRoute>
+          <VendorSettings />
+        </ProtectedRoute>
+      </Route>
 
       {/* Student Business pages */}
-      <Route path="/student-businesses" component={VendorStores} />
-      <Route path="/business/:id" component={VendorDetail} />
+      <Route path="/student-businesses">
+        <ProtectedRoute>
+          <VendorStores />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/business/:id">
+        <ProtectedRoute>
+          <VendorDetail />
+        </ProtectedRoute>
+      </Route>
       
       {/* Browse Products */}
-      <Route path="/browse-products" component={BrowseProducts} />
-      <Route path="/track-order" component={TrackOrder} />
-      <Route path="/return-policy" component={ReturnPolicy} />
-      <Route path="/customer-support" component={CustomerSupport} />
+      <Route path="/browse-products">
+        <ProtectedRoute>
+          <BrowseProducts />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/track-order">
+        <ProtectedRoute>
+          <TrackOrder />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/return-policy">
+        <ProtectedRoute>
+          <ReturnPolicy />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/customer-support">
+        <ProtectedRoute>
+          <CustomerSupport />
+        </ProtectedRoute>
+      </Route>
       
       {/* Vendor pages */}
-      <Route path="/sell-on-vendorhub" component={SellOnVendorHub} />
-      <Route path="/vendor-guidelines" component={VendorGuidelines} />
-      <Route path="/payout-information" component={PayoutInformation} />
-      <Route path="/vendor-support" component={VendorSupport} />
+      <Route path="/sell-on-vendorhub">
+        <ProtectedRoute>
+          <SellOnVendorHub />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor-guidelines">
+        <ProtectedRoute>
+          <VendorGuidelines />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/payout-information">
+        <ProtectedRoute>
+          <PayoutInformation />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/vendor-support">
+        <ProtectedRoute>
+          <VendorSupport />
+        </ProtectedRoute>
+      </Route>
       
       {/* Policy pages */}
-      <Route path="/payment-options" component={PaymentOptions} />
-      <Route path="/mobile-money" component={MobileMoney} />
+      <Route path="/payment-options">
+        <ProtectedRoute>
+          <PaymentOptions />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/mobile-money">
+        <ProtectedRoute>
+          <MobileMoney />
+        </ProtectedRoute>
+      </Route>
       
       {/* Contact page */}
-      <Route path="/contact-vendor" component={ContactVendor} />
+      <Route path="/contact-vendor">
+        <ProtectedRoute>
+          <ContactVendor />
+        </ProtectedRoute>
+      </Route>
       
       <Route component={NotFound} />
     </Switch>

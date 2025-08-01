@@ -216,10 +216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userData.email)) {
-        return res.status(400).json({ message: 'Invalid email format. Please use a valid email address (e.g., user@example.com)' });
+      // Validate KTU student email format
+      const ktuEmailRegex = /^[^\s@]+@ktu\.edu\.gh$/;
+      if (!ktuEmailRegex.test(userData.email)) {
+        return res.status(400).json({ message: 'Only KTU students can register. Please use your official KTU email ending with @ktu.edu.gh' });
       }
       
       const existingUser = await storage.getUserByEmail(userData.email);
