@@ -12,6 +12,8 @@ VendorHub is a mobile-friendly multi-vendor eCommerce platform designed for the 
 - **Inventory Removal**: Completely removed all stock/inventory tracking including "items left" displays from product cards and listings
 - **Cart Button Removal**: Removed shopping cart buttons from product listings to enforce contact-based purchasing model
 - **BizConnect Logo Integration**: Implemented comprehensive branding with BizConnect logo across entire application including header navigation, login/register pages, admin login, homepage hero section, and favicon
+- **University Name Correction**: Updated all references to reflect correct university name "Koforidua Technical University" throughout documentation and application materials
+- **Complete Application Documentation**: Created comprehensive guide explaining all platform functionalities including admin dashboard, student business dashboard, and all platform sections (Products, Mentorship, Resources, Community)
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
