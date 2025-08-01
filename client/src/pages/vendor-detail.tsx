@@ -298,7 +298,6 @@ export default function VendorDetail() {
   const VendorHubProductCard = ({ product }: { product: Product }) => {
     const discountPercent = Math.floor(Math.random() * 40) + 10;
     const originalPrice = parseFloat(product.price) * (1 + discountPercent / 100);
-    const itemsLeft = Math.floor(Math.random() * 50) + 1;
     const productRating = (Math.random() * 2 + 3).toFixed(1);
     const ratingCount = Math.floor(Math.random() * 500) + 50;
     
@@ -333,7 +332,7 @@ export default function VendorDetail() {
               {product.title.length > 20 ? product.title.substring(0, 20) + '...' : product.title}
             </h4>
             
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center text-xs">
               <div className="flex items-center space-x-1">
                 <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
                 <span className="text-gray-600">
@@ -343,9 +342,6 @@ export default function VendorDetail() {
                   ({ratingCount})
                 </span>
               </div>
-              <span className="text-gray-500">
-                {itemsLeft} left
-              </span>
             </div>
           </div>
         </div>
