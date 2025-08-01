@@ -3,6 +3,11 @@
 ## Overview
 VendorHub is a mobile-friendly multi-vendor eCommerce platform designed for the Ghanaian market. It enables vendors to establish and manage online stores, offering buyers a smooth shopping experience. The platform integrates with Paystack for secure payments and MTN Mobile Money for vendor payouts, aiming to be a leading online marketplace in Ghana.
 
+## Recent Changes (August 2025)
+- **Real-time Search Implementation**: Added debounced search functionality with dropdown results showing products and businesses separately
+- **Updated Search Routing**: Changed search redirects from `/browse-products` to `/products-listing` for unified product browsing experience
+- **Enhanced Rating System**: Integrated database-driven ratings for vendor stores, replacing fake display metrics
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 

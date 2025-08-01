@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { useLocation } from 'wouter';
 import { 
   Search, Filter, Grid, List, Star, Heart, Eye, ShoppingCart,
   SlidersHorizontal, ArrowUpDown, ChevronDown, Package
@@ -91,10 +92,20 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
 };
 
 export default function ProductsListing() {
+  const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [priceRange, setPriceRange] = useState('all');
+
+  // Handle URL search parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+      setSearchTerm(searchParam);
+    }
+  }, [location]);
 
   // Fetch products
   const { data: products = [], isLoading } = useQuery({

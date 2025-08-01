@@ -76,7 +76,7 @@ export const Header = () => {
     if (searchQuery.trim()) {
       setShowSearchResults(false);
       setIsSearchFocused(false);
-      window.location.href = `/browse-products?search=${encodeURIComponent(searchQuery)}`;
+      window.location.href = `/products-listing?search=${encodeURIComponent(searchQuery)}`;
     }
   };
 
@@ -84,7 +84,7 @@ export const Header = () => {
     if (searchQuery.trim()) {
       setShowSearchResults(false);
       setIsSearchFocused(false);
-      window.location.href = `/browse-products?search=${encodeURIComponent(searchQuery)}`;
+      window.location.href = `/products-listing?search=${encodeURIComponent(searchQuery)}`;
     } else {
       setIsSearchFocused(!isSearchFocused);
     }
@@ -253,7 +253,7 @@ export const Header = () => {
                       {searchQuery.trim() && (
                         <div className="border-t border-gray-100 p-2">
                           <Link
-                            to={`/browse-products?search=${encodeURIComponent(searchQuery)}`}
+                            to={`/products-listing?search=${encodeURIComponent(searchQuery)}`}
                             className="block w-full text-center py-2 text-sm text-orange-600 hover:text-orange-700 font-medium"
                             onClick={() => setShowSearchResults(false)}
                           >
