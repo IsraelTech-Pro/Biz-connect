@@ -234,51 +234,73 @@ export default function ContactVendorPage() {
               </CardContent>
             </Card>
 
-            {/* Contact Options */}
+            {/* Contact Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Contact Seller</CardTitle>
+                <CardTitle>Contact Information</CardTitle>
                 <p className="text-sm text-gray-600">
-                  Choose your preferred way to contact the seller
+                  Use the information below to contact the seller
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {/* WhatsApp Contact */}
-                  {(vendor as any).whatsapp_number && (
-                    <Button
-                      onClick={handleWhatsAppContact}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white"
-                      size="lg"
-                    >
-                      <MessageCircle className="mr-2 h-5 w-5" />
-                      Message on WhatsApp
-                    </Button>
-                  )}
-
-                  {/* Phone Contact */}
+                <div className="space-y-4">
+                  {/* Phone Number */}
                   {(vendor as any).phone_number && (
-                    <Button
-                      onClick={handlePhoneCall}
-                      variant="outline"
-                      className="w-full"
-                      size="lg"
-                    >
-                      <Phone className="mr-2 h-5 w-5" />
-                      Call {(vendor as any).phone_number}
-                    </Button>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Phone className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">Phone</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {(vendor as any).phone_number}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handlePhoneCall}
+                        size="sm"
+                        className="ml-auto bg-blue-600 hover:bg-blue-700"
+                      >
+                        Call
+                      </Button>
+                    </div>
                   )}
 
-                  {/* Email Contact */}
-                  <Button
-                    onClick={handleEmailContact}
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                  >
-                    <Mail className="mr-2 h-5 w-5" />
-                    Send Email
-                  </Button>
+                  {/* WhatsApp Number */}
+                  {(vendor as any).whatsapp_number && (
+                    <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                      <MessageCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">WhatsApp</p>
+                        <p className="text-lg font-semibold text-gray-900">
+                          {(vendor as any).whatsapp_number}
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleWhatsAppContact}
+                        size="sm"
+                        className="ml-auto bg-green-600 hover:bg-green-700"
+                      >
+                        Message
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                    <Mail className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Email</p>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {vendor.email}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleEmailContact}
+                      size="sm"
+                      className="ml-auto bg-orange-600 hover:bg-orange-700"
+                    >
+                      Email
+                    </Button>
+                  </div>
                 </div>
 
                 <Separator className="my-4" />
