@@ -3269,5 +3269,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Product Rating API Routes
+  app.get('/api/products/:productId/ratings', async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const ratings = await storage.getProductRatings(productId);
+      res.json(ratings);
+    } catch (error) {
+      console.error('Error fetching product ratings:', error);
+      res.status(500).json({ message: 'Failed to fetch product ratings' });
+    }
+  });
+
+  app.get('/api/products/:productId/rating-stats', async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const stats = await storage.getProductRatingStats(productId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Error fetching product rating stats:', error);
+      res.status(500).json({ message: 'Failed to fetch product rating stats' });
+    }
+  });
+
+  app.get('/api/products/:productId/user-rating', authenticateToken, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const user = req.user as any;
+      const rating = await storage.getProductRating(user.id, productId);
+      res.json(rating || null);
+    } catch (error) {
+      console.error('Error fetching user product rating:', error);
+      res.status(500).json({ message: 'Failed to fetch user product rating' });
+    }
+  });
+
+  app.post('/api/products/:productId/rate', authenticateToken, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const { rating } = req.body;
+      const user = req.user as any;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+      }
+
+      // Check if user already has a rating for this product
+      const existingRating = await storage.getProductRating(user.id, productId);
+      
+      if (existingRating) {
+        // Update existing rating
+        const updatedRating = await storage.updateProductRating(existingRating.id, { rating });
+        res.json(updatedRating);
+      } else {
+        // Create new rating
+        const newRating = await storage.createProductRating({
+          user_id: user.id,
+          product_id: productId,
+          rating
+        });
+        res.json(newRating);
+      }
+    } catch (error) {
+      console.error('Error rating product:', error);
+      res.status(500).json({ message: 'Failed to rate product' });
+    }
+  });
+
+  app.delete('/api/products/:productId/rating', authenticateToken, async (req, res) => {
+    try {
+      const { productId } = req.params;
+      const user = req.user as any;
+
+      const existingRating = await storage.getProductRating(user.id, productId);
+      
+      if (!existingRating) {
+        return res.status(404).json({ message: 'Rating not found' });
+      }
+
+      await storage.deleteProductRating(existingRating.id);
+      res.json({ message: 'Rating deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting product rating:', error);
+      res.status(500).json({ message: 'Failed to delete product rating' });
+    }
+  });
+
   return httpServer;
 }

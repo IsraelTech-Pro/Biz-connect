@@ -355,6 +355,16 @@ export const businessRatings = pgTable("business_ratings", {
   updated_at: timestamp("updated_at").defaultNow(),
 });
 
+// Product ratings table
+export const productRatings = pgTable("product_ratings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  product_id: uuid("product_id").notNull().references(() => products.id), // References product
+  user_id: uuid("user_id").notNull().references(() => users.id), // User who rated
+  rating: integer("rating").notNull(), // 1-5 star rating
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schema for admin users
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
   id: true,
@@ -369,10 +379,19 @@ export const insertBusinessRatingSchema = createInsertSchema(businessRatings).om
   updated_at: true,
 });
 
+// Insert schema for product ratings
+export const insertProductRatingSchema = createInsertSchema(productRatings).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
 export type BusinessRating = typeof businessRatings.$inferSelect;
 export type InsertBusinessRating = z.infer<typeof insertBusinessRatingSchema>;
+export type ProductRating = typeof productRatings.$inferSelect;
+export type InsertProductRating = z.infer<typeof insertProductRatingSchema>;
 
 // Community discussions table
 export const discussions = pgTable("discussions", {

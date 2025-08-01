@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'wouter';
 import type { Product, User } from '@shared/schema';
 import { getCategoryLabel } from '@shared/categories';
+import { ProductRating } from '@/components/product-rating';
 
 // KTU BizConnect Business Card Component with Real Rating
 const BusinessCard = ({ business }: { business: any }) => {
@@ -85,10 +86,12 @@ const ProductCard = ({ product }: { product: any }) => {
           <h4 className="font-medium text-ktu-deep-blue text-sm mb-1 line-clamp-1">{product.name}</h4>
           <p className="text-xs text-ktu-dark-grey line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center space-x-1">
-              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-              <span className="text-xs text-ktu-dark-grey">No ratings</span>
-            </div>
+            <ProductRating 
+              productId={product.id} 
+              size="sm" 
+              showCount={true} 
+              interactive={true}
+            />
             <Heart className="h-4 w-4 text-ktu-dark-grey hover:text-ktu-orange cursor-pointer transition-colors" />
           </div>
         </div>

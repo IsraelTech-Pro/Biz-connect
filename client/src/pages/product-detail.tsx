@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, User } from "@shared/schema";
+import { ProductRating } from "@/components/product-rating";
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -222,6 +223,17 @@ export default function ProductDetail() {
                   <h1 className="text-xl lg:text-2xl font-bold text-black mb-3">
                     {product.title}
                   </h1>
+                  
+                  {/* Product Rating */}
+                  <div className="mb-4">
+                    <ProductRating 
+                      productId={product.id} 
+                      size="md" 
+                      showCount={true} 
+                      interactive={true}
+                      className="mb-2"
+                    />
+                  </div>
                 </div>
 
                 {/* Price Section */}
