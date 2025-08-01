@@ -622,61 +622,7 @@ export default function VendorSettings() {
             </CardContent>
           </Card>
 
-          {/* Mobile Money Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Smartphone className="h-5 w-5" />
-                <span>Mobile Money Settings</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="momo_number">MTN Mobile Money Number</Label>
-                  <Input
-                    id="momo_number"
-                    value={displayPhoneNumber(formData.momo_number)}
-                    onChange={(e) => handlePhoneInputChange('momo_number', e.target.value)}
-                    placeholder="024XXXXXXX"
-                  />
-                  <p className="text-sm text-gray-600 mt-1">
-                    This number will be used for receiving payouts from your student business sales (will be saved as +233XXXXXXX)
-                  </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 rounded-full ${currentUser?.momo_number ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className={`text-sm ${currentUser?.momo_number ? 'text-green-600' : 'text-red-600'}`}>
-                    {currentUser?.momo_number ? 'Mobile Money Number Set' : 'Mobile Money Number Not Set'}
-                  </span>
-                </div>
-
-                {!currentUser?.momo_number && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="text-sm text-yellow-800">
-                      Please set your mobile money number to receive payouts from your student business sales.
-                    </p>
-                  </div>
-                )}
-
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <Smartphone className="h-5 w-5 text-orange-600 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-orange-900">Need to change your mobile money number?</p>
-                      <p className="text-sm text-orange-800 mt-1">
-                        For security reasons, mobile money number changes require verification. Please call our customer care team at <strong>+233 123 456 789</strong>.
-                      </p>
-                      <p className="text-xs text-orange-700 mt-2">
-                        Available: Monday - Friday, 8:00 AM - 6:00 PM (GMT)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
 
           {/* Account Status */}
           <Card>
