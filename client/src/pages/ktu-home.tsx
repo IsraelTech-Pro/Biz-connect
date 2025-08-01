@@ -223,26 +223,6 @@ export default function KTUHome() {
 
   return (
     <div className="min-h-screen bg-ktu-grey">
-      {/* Hero Section */}
-      <section className="relative h-96 overflow-hidden ktu-hero-gradient flex items-center justify-center">
-        <div className="text-center text-white max-w-4xl px-4">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            WELCOME TO KTU BIZCONNECT
-          </h1>
-          <h2 className="text-xl md:text-2xl font-medium mb-4">
-            Your Gateway to Student Entrepreneurship
-          </h2>
-          <p className="text-lg mb-8 opacity-90">
-            Connect, collaborate, and grow your business at Koforidua Technical University
-          </p>
-          <div>
-            <Button size="lg" className="bg-white text-ktu-deep-blue hover:bg-gray-100 font-semibold px-8">
-              GET STARTED
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </section>
 
       {/* Quick Actions Grid */}
       <section className="container mx-auto px-4 py-8">
