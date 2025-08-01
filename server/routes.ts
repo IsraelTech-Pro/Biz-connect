@@ -3155,9 +3155,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Create discussion
   app.post('/api/admin/discussions', authenticateAdminToken, async (req, res) => {
     try {
+      // Get or create system admin user in users table for discussions
+      let systemAdminUser;
+      try {
+        // Try to find existing system admin user
+        const allUsers = await storage.getUsers();
+        systemAdminUser = allUsers.find(u => u.email === 'admin@ktu.edu.gh' && u.role === 'admin');
+        
+        if (!systemAdminUser) {
+          // Create system admin user for discussions
+          const newSystemAdmin = {
+            full_name: 'KTU BizConnect Admin',
+            email: 'admin@ktu.edu.gh',
+            password: 'system_admin_placeholder', // Not used for login
+            role: 'admin' as const,
+            is_approved: true,
+            store_name: 'KTU BizConnect Administration',
+            phone: '0000000000',
+            whatsapp: '0000000000'
+          };
+          
+          systemAdminUser = await storage.createUser(newSystemAdmin);
+        }
+      } catch (error) {
+        console.error('Error handling system admin user:', error);
+        throw new Error('Failed to setup system admin user');
+      }
+
       const discussionData = {
         ...req.body,
-        author_id: req.adminUser.id // Use admin user ID
+        author_id: systemAdminUser.id // Use system admin user ID from users table
       };
 
       const discussion = await storage.createDiscussion(discussionData);
