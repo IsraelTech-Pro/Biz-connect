@@ -9,6 +9,8 @@ VendorHub is a mobile-friendly multi-vendor eCommerce platform designed for the 
 - **Enhanced Rating System**: Integrated database-driven ratings for vendor stores, replacing fake display metrics
 - **Buyer Dashboard Removal**: Completely removed buyer dashboard functionality, streamlining the platform for vendor-focused operations
 - **Product Rating System**: Implemented comprehensive product rating functionality with 1-5 star ratings, matching business rating display format (single star + number like "3.0"), and interactive rating capability on homepage cards and product detail pages
+- **Inventory Removal**: Completely removed all stock/inventory tracking including "items left" displays from product cards and listings
+- **Cart Button Removal**: Removed shopping cart buttons from product listings to enforce contact-based purchasing model
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

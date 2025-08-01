@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Product } from '@shared/schema';
 import { useCart } from '@/contexts/cart-context';
 import { useToast } from '@/hooks/use-toast';
+import { ProductRating } from '@/components/product-rating';
 
 interface ProductCardProps {
   product: Product;
@@ -46,15 +47,12 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <span className="current-price">GH₵ {product.price}</span>
             <span className="original-price">GH₵ {originalPrice.toFixed(2)}</span>
           </div>
-          <div className="flex items-center space-x-1 mb-1">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`w-2 h-2 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">({ratingCount})</span>
-          </div>
-          <div className="items-left">{itemsLeft} items left</div>
+          <ProductRating 
+            productId={product.id} 
+            size="sm" 
+            showCount={true} 
+            interactive={true}
+          />
         </div>
       </div>
     </Link>
