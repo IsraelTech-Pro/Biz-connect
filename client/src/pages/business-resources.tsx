@@ -423,25 +423,7 @@ export default function BusinessResources() {
         )}
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-ktu-deep-blue mb-4">
-            Need a Specific Resource?
-          </h2>
-          <p className="text-ktu-dark-grey mb-6 max-w-2xl mx-auto">
-            Can't find what you're looking for? Let us know what resources would help your business grow.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-ktu-orange hover:bg-ktu-orange-light">
-              Request Resource
-            </Button>
-            <Button variant="outline" className="border-ktu-deep-blue text-ktu-deep-blue hover:bg-ktu-deep-blue hover:text-white">
-              Suggest a Topic
-            </Button>
-          </div>
-        </div>
-      </section>
+      
     </div>
   );
 }
