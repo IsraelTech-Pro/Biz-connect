@@ -7,6 +7,7 @@ VendorHub is a mobile-friendly multi-vendor eCommerce platform designed for the 
 - **Real-time Search Implementation**: Added debounced search functionality with dropdown results showing products and businesses separately
 - **Updated Search Routing**: Changed search redirects from `/browse-products` to `/products-listing` for unified product browsing experience
 - **Enhanced Rating System**: Integrated database-driven ratings for vendor stores, replacing fake display metrics
+- **Buyer Dashboard Removal**: Completely removed buyer dashboard functionality, streamlining the platform for vendor-focused operations
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.

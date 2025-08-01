@@ -40,7 +40,6 @@ import Register from "@/pages/auth/register";
 import VendorRegister from "@/pages/vendor/vendor-register";
 
 // Dashboard pages
-import BuyerDashboard from "@/pages/buyer-dashboard";
 import VendorDashboard from "@/pages/vendor/vendor-dashboard";
 import VendorProducts from "@/pages/vendor/products";
 import VendorProductsGrid from "@/pages/vendor/products-grid";
@@ -189,11 +188,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-      <Route path="/dashboard/buyer">
-        <ProtectedRoute>
-          <BuyerDashboard />
-        </ProtectedRoute>
-      </Route>
+
       
       <Route path="/vendor/products">
         <ProtectedRoute>

@@ -342,14 +342,12 @@ export const Header = () => {
               </div>
 
               {/* Dashboard */}
-              {user && (
+              {user && (user.role === "vendor" || user.role === "admin") && (
                 <Link
                   to={
                     user.role === "vendor"
                       ? "/vendor/dashboard"
-                      : user.role === "admin"
-                        ? "/admin/dashboard"
-                        : "/dashboard/buyer"
+                      : "/admin/dashboard"
                   }
                 >
                   <Button
@@ -363,9 +361,7 @@ export const Header = () => {
                       <div className="text-sm font-medium">
                         {user.role === "vendor"
                           ? "Business"
-                          : user.role === "admin"
-                            ? "Admin"
-                            : "Buyer"}
+                          : "Admin"}
                       </div>
                     </div>
                   </Button>
@@ -457,14 +453,12 @@ export const Header = () => {
             className="md:hidden bg-white border-t border-gray-200"
           >
             <div className="px-4 py-4 space-y-3">
-              {user && (
+              {user && (user.role === "vendor" || user.role === "admin") && (
                 <Link
                   to={
                     user.role === "vendor"
                       ? "/vendor/dashboard"
-                      : user.role === "admin"
-                        ? "/admin/dashboard"
-                        : "/dashboard/buyer"
+                      : "/admin/dashboard"
                   }
                   className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-50 text-ktu-deep-blue hover:text-ktu-orange"
                   onClick={() => setIsMenuOpen(false)}
@@ -473,9 +467,7 @@ export const Header = () => {
                   <span className="text-sm font-medium">
                     {user.role === "vendor"
                       ? "Business Dashboard"
-                      : user.role === "admin"
-                        ? "Admin Dashboard"
-                        : "Buyer Dashboard"}
+                      : "Admin Dashboard"}
                   </span>
                 </Link>
               )}
