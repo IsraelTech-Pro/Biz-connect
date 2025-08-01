@@ -311,26 +311,6 @@ export default function BusinessResources() {
             >
               Access comprehensive tools, guides, and templates to grow your KTU student business
             </motion.p>
-            
-            <motion.div 
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
-            >
-              {[
-                { label: "Guides", value: `${resourceStats.totalGuides}+`, icon: BookOpen },
-                { label: "Templates", value: `${resourceStats.totalTemplates}+`, icon: FileText },
-                { label: "Video Courses", value: `${resourceStats.totalVideos}+`, icon: Video },
-                { label: "Business Tools", value: `${resourceStats.totalTools}+`, icon: Calculator }
-              ].map((stat, index) => (
-                <div key={stat.label} className="text-center">
-                  <stat.icon className="h-8 w-8 mx-auto mb-2 text-ktu-orange" />
-                  <div className="text-2xl font-bold text-ktu-deep-blue">{stat.value}</div>
-                  <div className="text-sm text-ktu-dark-grey">{stat.label}</div>
-                </div>
-              ))}
-            </motion.div>
           </div>
         </div>
       </section>
