@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'wouter';
 import type { Product } from '@shared/schema';
+import { ProductRating } from '@/components/product-rating';
 
 const ProductCard = ({ product, index }: { product: any; index: number }) => {
   const [isLiked, setIsLiked] = useState(false);
@@ -52,11 +53,7 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
                 <Eye className="h-3 w-3" />
               </button>
             </div>
-            <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button size="sm" className="bg-ktu-deep-blue hover:bg-ktu-blue text-white">
-                <ShoppingCart className="h-3 w-3" />
-              </Button>
-            </div>
+            
           </div>
           
           <CardContent className="p-3">
@@ -70,20 +67,12 @@ const ProductCard = ({ product, index }: { product: any; index: number }) => {
               {product.description}
             </p>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs text-ktu-dark-grey">
-                  {product.rating || `4.${Math.floor(Math.random() * 9)}`}
-                </span>
-                <span className="text-xs text-ktu-dark-grey">
-                  ({product.reviews || Math.floor(Math.random() * 50 + 10)})
-                </span>
-              </div>
-              <span className="text-xs text-ktu-dark-grey">
-                {product.stock || Math.floor(Math.random() * 20 + 5)} left
-              </span>
-            </div>
+            <ProductRating 
+              productId={product.id} 
+              size="sm" 
+              showCount={true} 
+              interactive={true}
+            />
           </CardContent>
         </Card>
       </Link>
