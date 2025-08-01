@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Store, MapPin, Star, Package, Users, ShoppingBag } from "lucide-react";
-import { User, Product } from "@/shared/schema";
+import { Store, MapPin, Star, Package } from "lucide-react";
+import { User, Product } from "@shared/schema";
 
 export default function VendorStores() {
   const { data: vendors, isLoading: vendorsLoading } = useQuery({
@@ -43,13 +43,31 @@ export default function VendorStores() {
     return productsList.filter((product: Product) => product.vendor_id === vendorId);
   };
 
-  const getVendorRating = () => {
-    return (Math.random() * 2 + 3).toFixed(1);
-  };
+  // Component to display vendor rating
+  function VendorRating({ vendorId }: { vendorId: string }) {
+    const { data: ratingStats } = useQuery<{ averageRating: number; totalRatings: number }>({
+      queryKey: [`/api/businesses/${vendorId}/rating-stats`],
+    });
 
-  const getVendorSales = () => {
-    return Math.floor(Math.random() * 1000) + 100;
-  };
+    const rating = ratingStats?.averageRating || 0;
+    const totalRatings = ratingStats?.totalRatings || 0;
+
+    return (
+      <div className="flex items-center">
+        <div className="flex items-center">
+          {[...Array(5)].map((_, i) => (
+            <Star 
+              key={i} 
+              className={`w-4 h-4 ${i < Math.floor(rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+            />
+          ))}
+        </div>
+        <span className="text-sm text-gray-600 ml-2">
+          {rating > 0 ? `${rating.toFixed(1)} (${totalRatings} reviews)` : 'No reviews yet'}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -102,8 +120,6 @@ export default function VendorStores() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {vendorsList.map((vendor: User) => {
               const vendorProducts = getVendorProducts(vendor.id);
-              const rating = getVendorRating();
-              const sales = getVendorSales();
 
               return (
                 <Link 
@@ -161,22 +177,12 @@ export default function VendorStores() {
                       </div>
 
                       {/* Rating */}
-                      <div className="flex items-center mb-4">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-4 h-4 ${i < Math.floor(parseFloat(rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-600 ml-2">
-                          {rating} ({sales} sales)
-                        </span>
+                      <div className="mb-4">
+                        <VendorRating vendorId={vendor.id} />
                       </div>
 
                       {/* Store Stats */}
-                      <div className="grid grid-cols-3 gap-4 py-4 border-t border-gray-100">
+                      <div className="py-4 border-t border-gray-100">
                         <div className="text-center">
                           <div className="flex items-center justify-center text-orange-600 mb-1">
                             <Package className="w-4 h-4" />
@@ -184,25 +190,7 @@ export default function VendorStores() {
                           <div className="text-sm font-semibold text-gray-900">
                             {vendorProducts.length}
                           </div>
-                          <div className="text-xs text-gray-500">Products</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center text-green-600 mb-1">
-                            <Users className="w-4 h-4" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {Math.floor(Math.random() * 500) + 100}
-                          </div>
-                          <div className="text-xs text-gray-500">Followers</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="flex items-center justify-center text-blue-600 mb-1">
-                            <ShoppingBag className="w-4 h-4" />
-                          </div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {sales}
-                          </div>
-                          <div className="text-xs text-gray-500">Sales</div>
+                          <div className="text-xs text-gray-500">Products Available</div>
                         </div>
                       </div>
 
