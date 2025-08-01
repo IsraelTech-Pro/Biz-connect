@@ -68,7 +68,7 @@ interface User {
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('businesses');
   const [adminUser, setAdminUser] = useState<any>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -545,62 +545,12 @@ export default function AdminDashboard() {
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="businesses">Manage Businesses</TabsTrigger>
               <TabsTrigger value="users">Manage Users</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-ktu-deep-blue">Recent Business Registrations</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {businesses.slice(0, 5).map((business) => (
-                        <div key={business.id} className="flex items-center justify-between py-2 border-b border-gray-100">
-                          <div>
-                            <p className="font-medium text-gray-900">{business.business_name}</p>
-                            <p className="text-sm text-gray-500">{business.full_name}</p>
-                          </div>
-                          <Badge className={business.is_approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                            {business.is_approved ? 'Approved' : 'Pending'}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg text-ktu-deep-blue">System Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">New user registrations today</span>
-                        <span className="font-semibold">12</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Products added today</span>
-                        <span className="font-semibold">8</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Orders placed today</span>
-                        <span className="font-semibold">24</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Revenue today</span>
-                        <span className="font-semibold">₵2,450</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+            
 
             <TabsContent value="businesses" className="mt-6">
               <Card>
