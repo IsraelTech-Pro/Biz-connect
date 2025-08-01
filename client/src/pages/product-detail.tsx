@@ -226,13 +226,17 @@ export default function ProductDetail() {
                   
                   {/* Product Rating */}
                   <div className="mb-4">
-                    <ProductRating 
-                      productId={product.id} 
-                      size="md" 
-                      showCount={true} 
-                      interactive={true}
-                      className="mb-2"
-                    />
+                    <div className="flex items-center space-x-3">
+                      <ProductRating 
+                        productId={product.id} 
+                        size="md" 
+                        showCount={true} 
+                        interactive={true}
+                      />
+                      <span className="text-sm text-ktu-dark-grey">
+                        Click stars to rate this product
+                      </span>
+                    </div>
                   </div>
                 </div>
 

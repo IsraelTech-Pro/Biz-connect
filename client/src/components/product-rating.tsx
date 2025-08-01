@@ -132,46 +132,40 @@ export function ProductRating({
 
   return (
     <div className={cn("flex items-center space-x-1", className)}>
-      <div 
-        className="flex items-center space-x-0.5"
-        onMouseLeave={handleMouseLeave}
-        data-testid={`product-rating-${productId}`}
-      >
-        {[1, 2, 3, 4, 5].map((star) => {
-          const isActive = interactive && user ? 
-            (hoveredRating ? star <= hoveredRating : star <= currentUserRating) :
-            star <= Math.round(averageRating);
-          
-          return (
-            <Star
-              key={star}
-              className={cn(
-                sizeClasses[size],
-                "transition-colors",
-                isActive 
-                  ? "fill-yellow-400 text-yellow-400" 
-                  : "text-gray-300",
-                interactive && user ? "cursor-pointer hover:text-yellow-400" : ""
-              )}
-              onClick={() => handleStarClick(star)}
-              onMouseEnter={() => handleStarHover(star)}
-              data-testid={`star-${star}-product-${productId}`}
-            />
-          );
-        })}
-      </div>
+      {/* Show single star with rating for display, or interactive stars when user can rate */}
+      {interactive && user ? (
+        <div 
+          className="flex items-center space-x-0.5"
+          onMouseLeave={handleMouseLeave}
+          data-testid={`product-rating-${productId}`}
+        >
+          {[1, 2, 3, 4, 5].map((star) => {
+            const isActive = hoveredRating ? star <= hoveredRating : star <= currentUserRating;
+            
+            return (
+              <Star
+                key={star}
+                className={cn(
+                  sizeClasses[size],
+                  "transition-colors cursor-pointer",
+                  isActive 
+                    ? "fill-yellow-400 text-yellow-400" 
+                    : "text-gray-300 hover:text-yellow-400"
+                )}
+                onClick={() => handleStarClick(star)}
+                onMouseEnter={() => handleStarHover(star)}
+                data-testid={`star-${star}-product-${productId}`}
+              />
+            );
+          })}
+        </div>
+      ) : (
+        <Star className={cn(sizeClasses[size], "fill-yellow-400 text-yellow-400")} />
+      )}
       
       {showCount && (
-        <span className={cn("text-gray-500", textSizeClasses[size])}>
-          {interactive && user && currentUserRating > 0 ? (
-            <span className="text-ktu-orange font-medium">
-              Your rating: {currentUserRating}/5
-            </span>
-          ) : totalRatings > 0 ? (
-            `${averageRating.toFixed(1)} (${totalRatings})`
-          ) : (
-            "No ratings"
-          )}
+        <span className={cn("text-ktu-dark-grey", textSizeClasses[size])}>
+          {averageRating > 0 ? averageRating.toFixed(1) : 'No ratings'}
         </span>
       )}
     </div>
