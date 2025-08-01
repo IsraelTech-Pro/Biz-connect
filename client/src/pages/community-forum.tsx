@@ -790,11 +790,6 @@ function PostCard({ post, index }: { post: Discussion; index: number }) {
             </div>
 
             <div className="flex items-center space-x-4 text-sm text-ktu-dark-grey">
-              <div className="flex items-center space-x-1">
-                <Eye className="h-4 w-4" />
-                <span>{post.view_count}</span>
-              </div>
-              
               <button
                 onClick={handleLike}
                 disabled={likeMutation.isPending}
