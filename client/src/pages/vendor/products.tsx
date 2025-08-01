@@ -36,8 +36,6 @@ export default function VendorProducts() {
     price: '',
     original_price: '',
     discount_percentage: '',
-    stock_quantity: '',
-    low_stock_threshold: '',
     category: '',
     tags: ''
   });
@@ -155,7 +153,7 @@ export default function VendorProducts() {
   });
 
   const deleteProductMutation = useMutation({
-    mutationFn: (id: string) => apiRequest('DELETE', `/api/products/${id}`),
+    mutationFn: (id: string) => apiRequest(`/api/products/${id}`, { method: 'DELETE' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({
@@ -179,8 +177,6 @@ export default function VendorProducts() {
       price: '',
       original_price: '',
       discount_percentage: '',
-      stock_quantity: '',
-      low_stock_threshold: '',
       category: '',
       tags: ''
     });
@@ -213,7 +209,6 @@ export default function VendorProducts() {
       title: formData.title.trim(),
       description: formData.description.trim(),
       price: formData.price,
-      stock_quantity: parseInt(formData.stock_quantity) || 0,
       category: formData.category,
       image_url: productImages[0] || '',
       product_images: productImages.map((url, index) => ({
@@ -224,7 +219,6 @@ export default function VendorProducts() {
       tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [],
       original_price: formData.original_price || null,
       discount_percentage: parseInt(formData.discount_percentage) || 0,
-      low_stock_threshold: parseInt(formData.low_stock_threshold) || 10,
       status: 'active',
       vendor_id: user?.id
     };
@@ -242,12 +236,10 @@ export default function VendorProducts() {
       title: product.title,
       description: product.description,
       price: product.price,
-      stock_quantity: product.stock_quantity.toString(),
       category: product.category,
       tags: product.tags ? product.tags.join(', ') : '',
       original_price: product.original_price || '',
-      discount_percentage: product.discount_percentage?.toString() || '',
-      low_stock_threshold: product.low_stock_threshold?.toString() || ''
+      discount_percentage: product.discount_percentage?.toString() || ''
     });
     
     // Set existing images - handle both old image_url format and new product_images format
@@ -333,7 +325,7 @@ export default function VendorProducts() {
                 images={productImages}
                 onImagesChange={setProductImages}
                 maxImages={5}
-                token={token}
+                token={token || undefined}
               />
             </div>
 
@@ -424,31 +416,7 @@ export default function VendorProducts() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="stock_quantity" className="text-sm font-medium">Stock Quantity *</Label>
-                    <Input
-                      id="stock_quantity"
-                      type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-                      placeholder="0"
-                      className="mt-1"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="low_stock_threshold" className="text-sm font-medium">Low Stock Threshold</Label>
-                    <Input
-                      id="low_stock_threshold"
-                      type="number"
-                      value={formData.low_stock_threshold}
-                      onChange={(e) => setFormData({ ...formData, low_stock_threshold: e.target.value })}
-                      placeholder="10"
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
+
               </div>
             </div>
 
@@ -559,7 +527,6 @@ export default function VendorProducts() {
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
                       <div className="flex justify-between items-center">
                         <span className="text-2xl font-bold text-orange-600">₵{product.price}</span>
-                        <span className="text-sm text-gray-500">Stock: {product.stock_quantity}</span>
                       </div>
                     </CardContent>
                   </Card>
