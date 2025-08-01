@@ -247,43 +247,7 @@ export default function ProductDetail() {
                   </p>
                 </div>
 
-                {/* Delivery Info */}
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-800">
-                    Delivery & Returns
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start space-x-2">
-                      <Truck className="w-4 h-4 text-green-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Free delivery</p>
-                        <p className="text-xs text-gray-600">
-                          For orders above GH₵150
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <MapPin className="w-4 h-4 text-blue-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          Choose your location
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          Delivery available nationwide
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2">
-                      <Shield className="w-4 h-4 text-purple-600 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-medium">Return Policy</p>
-                        <p className="text-xs text-gray-600">
-                          Free returns within 15 days
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
 
                 {/* Purchase Actions */}
                 <div className="space-y-4">
